@@ -1,7 +1,7 @@
 ## Find the minimum set of species needed to meet a pollination function threshold for all years in a given timescale ##
 # require threshold to be met for every round in each year
 # repeat analysis for each site
-# edited NJL 4/19/2021
+# edited NJL 4/19/2021, 7/13/21
 
 ## load packages ##
 library(plyr)
@@ -10,16 +10,16 @@ library(tidyverse)
 library(gaoptim)
 library(abind)
 
-setwd("~/winfree lab/R code")
+setwd("C:/Users/natal/OneDrive - Rutgers University/Documents/winfree lab/R code")
 
 ## load the species required function
 source(file="minfinder_function_time.R")
 
 ## file paths and file names ##
-path <- "D:/natal/D_Documents/winfree lab/SQL data/"
-figpath <- "D:/natal/D_Documents/winfree lab/figures"
-rpath <- "D:/natal/D_Documents/winfree lab/R data/"
-outpath <- "D:/natal/D_Documents/winfree lab/BEFresults/"
+path <- "C://Documents/winfree lab/SQL data/"
+figpath <- "C:/Documents/winfree lab/figures"
+rpath <- "C:/Documents/winfree lab/R data/"
+outpath <- "C:/Documents/winfree lab/BEFresults/"
 
 ## import crop visit data as RData file ##
 crops = c("blue","cran","njwat","cawat")
@@ -73,12 +73,7 @@ for (s in c(1:length(sites))) {
   print(sites[s])
   dfsite = df_visits[ df_visits$site == sites[s], ] # choose one site
   syears = unique(dfsite$year)
-  # # loop through all rounds that were sampled at a given site
-  # for (r in c(1:length(srounds))) {   # repeat for all rounds measured at site s
-  #   dfsiteround = dfsite[ dfsite$round == srounds[r], ] # choose one round
-  #   dfsiteround = mutate(dfsiteround, year=factor(year)) # drop missing years as factors
-  #   sryears = unique(dfsiteround$year)
-    
+
     # loop through number of years (temporal scale). Here h=3 would be a set of 3 years
     # for each year, need to include all rounds from that year
     for (h in c(1:length(syears))) {		
@@ -93,10 +88,6 @@ for (s in c(1:length(sites))) {
       # select the years that are in this year subset (1 to 3 years):
       dfsite_ys = dfsite %>% filter(year %in% yearsubset)
       
-      # include only the first rmax rounds for each year, so that all site-years will have same number of rounds
-      # syrounds = unique(dfsite_yrs$round)
-      # syrounds[1:rmax]
-      # dfsite_yrs = dfsite_yrs %>% filter(round %in% syrounds[1:rmax])
       dfsite_yrs = data.frame()
       for (i in 1:h) {
         dfsy = dfsite_ys %>% filter(year == yearsubset[i])
@@ -117,9 +108,7 @@ for (s in c(1:length(sites))) {
       
       # define the matrix of species and years that will go into the optimizer
       func_outputB = m
-      
-      # func_outputB = func_output[,colnames(func_output) %in% yearsubset, drop=FALSE]
-      
+            
       # list the round-years that cannot meet the function threshold even with all their species.  All species present at these years will be required in the final set.
       low_sites = names(which(colSums(func_outputB)<func_level))
       
@@ -202,10 +191,6 @@ for (s in c(1:length(sites))) {
       out$evolve(30) 							# evolve for 30 generations
       
       # continue to run the optimizer 1 generation at a time until results do not change for 30 generations
-      # while (   min(out$bestFit()[summary(out)$n:(summary(out)$n-29)]) !=  out$bestFit()[summary(out)$n] ) {
-      #   out$evolve(1)
-      # }  # Error: $ operator is invalid for atomic vectors
-      
       n = 30
       while (   min(out$bestFit()[n:(n-29)]) !=  out$bestFit()[n] ) {
         print(n)
@@ -230,9 +215,17 @@ for (s in c(1:length(sites))) {
       
       # write output to csv, one line at a time.  This way, if program is stopped before complete, the output thusfar will already be saved in the csv
       if (h == 1 & s == 1) {
-        write.table(data.frame("crop" = crop, "site" = sites[s], "nyears"=h, "start_year" = yearsubset[1], "minsize" = new_min, "generations"=n, "popsize"=nrow(out$population()), "threshold" = func_level, "func_percent" = func_percent, "presets" = paste(presets, collapse=","), "run_type" = "observed_data", "minset" = paste(spreq_list, collapse=",")), file=paste(outpath,"minset_finder_results_", crop, "_observed_", func_percent*100, "_years_", rmax, "round.csv", sep=""),sep=",",append=F, col.names=T, row.names=F)
+        write.table(data.frame("crop" = crop, "site" = sites[s], "nyears"=h, "start_year" = yearsubset[1], "minsize" = new_min, "generations"=n, 
+                               "popsize"=nrow(out$population()), "threshold" = func_level, "func_percent" = func_percent, 
+                               "presets" = paste(presets, collapse=","), "run_type" = "observed_data", "minset" = paste(spreq_list, collapse=",")), 
+                    file=paste(outpath,"minset_finder_results_", crop, "_observed_", func_percent*100, "_years_", rmax, "round_test.csv", sep=""),
+                    sep=",",append=F, col.names=T, row.names=F)
       } else {
-        write.table(data.frame("crop" = crop, "site" = sites[s], "nyears"=h, "start_year" = yearsubset[1], "minsize" = new_min, "generations"=n, "popsize"=nrow(out$population()), "threshold" = func_level, "func_percent" = func_percent, "presets" = paste(presets, collapse=","), "run_type" = "observed_data", "minset" = paste(spreq_list, collapse=",")), file=paste(outpath,"minset_finder_results_", crop, "_observed_", func_percent*100, "_years_", rmax, "round.csv", sep=""),sep=",",append=T, col.names=F, row.names=F)
+        write.table(data.frame("crop" = crop, "site" = sites[s], "nyears"=h, "start_year" = yearsubset[1], "minsize" = new_min, "generations"=n, 
+                               "popsize"=nrow(out$population()), "threshold" = func_level, "func_percent" = func_percent, 
+                               "presets" = paste(presets, collapse=","), "run_type" = "observed_data", "minset" = paste(spreq_list, collapse=",")), 
+                    file=paste(outpath,"minset_finder_results_", crop, "_observed_", func_percent*100, "_years_", rmax, "round_test.csv", sep=""),
+                    sep=",",append=T, col.names=F, row.names=F)
       }		
       
     } #  end h years loop (h)
@@ -244,35 +237,25 @@ for (s in c(1:length(sites))) {
 
 ## load resulting csv files as R data frames and save for future analyses in R ##
 fname1 = "minset_finder_results_blue_observed_50_years.csv"
-# fname2 = "minset_finder_results_cran_observed_50_years.csv"
-# fname3 = "minset_finder_results_njwat_observed_50_years.csv"
 fname3 = paste("minset_finder_results_njwat_observed_50_years_",rmax,"round.csv",sep='')
-
 fname4 = "minset_finder_results_cawat_observed_50_years.csv"
 
 df_years_blue  = read.csv(paste(outpath,fname1,sep=""),header=TRUE,stringsAsFactors=F)
-# df_years_cran  = read.csv(paste(outpath,fname2,sep=""),header=TRUE,stringsAsFactors=F)
 df_years_njwat = read.csv(paste(outpath,fname3,sep=""),header=TRUE,stringsAsFactors=F)
 df_years_cawat = read.csv(paste(outpath,fname4,sep=""),header=TRUE,stringsAsFactors=F)
 
 # view data frames
 glimpse(df_years_blue)
-# glimpse(df_years_cran)
 glimpse(df_years_njwat)
 glimpse(df_years_cawat)
 
 ## convert to correct data types ##
 df_years_blue  = mutate(df_years_blue, crop=factor(crop), site=factor(site), start_year=factor(start_year))
-# df_years_cran  = mutate(df_years_cran, crop=factor(crop), site=factor(site), start_year=factor(start_year))
 df_years_njwat = mutate(df_years_njwat, crop=factor(crop), site=factor(site), start_year=factor(start_year))
 df_years_cawat = mutate(df_years_cawat, crop=factor(crop), site=factor(site), start_year=factor(start_year))
 summary(df_years_njwat)
 
 ## save as R data for future use ##
 save(df_years_blue, file=paste(rpath,"df_minset_years_blue.RData",sep=''))
-# save(df_years_cran, file=paste(rpath,"df_minset_years_cran.RData",sep=''))
-# save(df_years_njwat, file=paste(rpath,"df_minset_years_njwat.RData",sep=''))
 save(df_years_njwat, file=paste(rpath,"df_minset_years_njwat_",rmax,"round.RData",sep=''))
-
 save(df_years_cawat, file=paste(rpath,"df_minset_years_cawat.RData",sep=''))
-

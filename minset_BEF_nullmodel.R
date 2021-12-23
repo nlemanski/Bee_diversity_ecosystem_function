@@ -3,7 +3,7 @@
 # change in minimum set w/ number of samples taken from same day includes sampling effects only
 # change in minimum set w/ number of samples taken from different days includes both sampling effects and phenological turnover
 
-# edited NJL 8.16.2021
+# edited NJL 8.16.2021, 11.18.2021
 
 ## load packages ##
 library(plyr)
@@ -17,17 +17,17 @@ library(car)
 library(performance)
 library(effects)
 
-setwd("C:/Users/natal/OneDrive - Rutgers University/Documents/winfree lab/R code")
+setwd("C:/Documents/winfree lab/R code")
 
 ## load the species required function
 source(file="minfinder_function_time.R")
 
 ## file paths and file names ##
-path <- "C:/Users/natal/OneDrive - Rutgers University/Documents/winfree lab/SQL data/"
-figpath <- "C:/Users/natal/OneDrive - Rutgers University/Documents/winfree lab/figures/"
-rpath <- "C:/Users/natal/OneDrive - Rutgers University/Documents/winfree lab/R data/"
-outpath <- "C:/Users/natal/OneDrive - Rutgers University/Documents/winfree lab/BEF null model results/"
-altpath <- "C:/Users/natal/OneDrive - Rutgers University/Documents/winfree lab/alt null model results/"
+path <- "C:/Documents/winfree lab/SQL data/"
+figpath <- "C:/Documents/winfree lab/figures/"
+rpath <- "C:/Documents/winfree lab/R data/"
+outpath <- "C:/Documents/winfree lab/BEF null model results/"
+altpath <- "C:/Documents/winfree lab/alt null model results/"
 
 ## define crops and select crop to analyze ##
 crops = c("blue","njwat","cawat")
@@ -633,11 +633,7 @@ for (sitex in sites) {
           out = GAPerm(minfinder, length(startvector), popSize = 100)
           out$evolve(30) 							# evolve for 30 generations
           
-          # continue to run the optimizer 1 generation at a time until results do not change for 30 generations
-          # while (   min(out$bestFit()[summary(out)$n:(summary(out)$n-29)]) !=  out$bestFit()[summary(out)$n] ) {
-          #   out$evolve(1)
-          # }  # Error: $ operator is invalid for atomic vectors
-          
+          # continue to run the optimizer 1 generation at a time until results do not change for 30 generation          
           n = 30
           while (   min(out$bestFit()[n:(n-29)]) !=  out$bestFit()[n] ) {
             # print(n)

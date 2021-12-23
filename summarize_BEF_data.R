@@ -4,10 +4,10 @@ library(reshape)
 library(tidyverse)
 
 ## file paths and file names ##
-path <- "C:/Users/natal/OneDrive - Rutgers University/Documents/winfree lab/SQL data/"
-figpath <- "C:/Users/natal/OneDrive - Rutgers University/Documents/winfree lab/figures"
-rpath <- "C:/Users/natal/OneDrive - Rutgers University/Documents/winfree lab/R data/"
-outpath <- "C:/Users/natal/OneDrive - Rutgers University/Documents/winfree lab/BEFresults/"
+path <- "C:/Documents/winfree lab/SQL data/"
+figpath <- "C:/Documents/winfree lab/figures"
+rpath <- "C:/Documents/winfree lab/R data/"
+outpath <- "C:/Documents/winfree lab/BEFresults/"
 
 ## import crop visit data as RData file ##
 crops = c("blue","cran","njwat","cawat")

@@ -4,11 +4,11 @@
 library(tidyverse)
 
 ## file paths and file names ##
-path <- "C:/Users/natal/OneDrive - Rutgers University/Documents/winfree lab/SQL data/"
-figpath <- "C:/Users/natal/OneDrive - Rutgers University/Documents/winfree lab/figures"
-rpath <- "C:/Users/natal/OneDrive - Rutgers University/Documents/winfree lab/R data/"
-outpath <- "C:/Users/natal/OneDrive - Rutgers University/Documents/winfree lab/BEFresults/"
-path2 <- "C:/Users/natal/OneDrive - Rutgers University/Documents/winfree lab/Williams lab data/"
+path <- "C:/Documents/winfree lab/SQL data/"
+figpath <- "C:/Documents/winfree lab/figures"
+rpath <- "C:/Documents/winfree lab/R data/"
+outpath <- "C:/Documents/winfree lab/BEFresults/"
+path2 <- "C:/Documents/winfree lab/Williams lab data/"
 
 # df1 = df_visits %>% group_by(site,year,round) %>% summarize(abundance = length(gen_sp))
 # df1 %>% ungroup() %>% summarize(meanabund = mean(abundance))
@@ -110,7 +110,7 @@ df_function = read.csv(fname1,header=T, stringsAsFactors=T)
 summary(df_function)
 
 # rename columns
-df_function = df_function %>% rename(SV_group = ï..Species)
+df_function = df_function %>% rename(SV_group = Ã¯..Species)
 df_function = df_function %>% rename(sex = Sex)
 df_function = df_function %>% rename(SV_pollen = SIGmean)
 

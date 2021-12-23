@@ -1,6 +1,6 @@
 ## Find the minimum set of species needed to meet a pollination function threshold for all rounds in a given timescale ##
 # repeat analysis for each site-year
-# edited NJL 5/4/2021
+# edited NJL 5/4/2021, 8/20/2021
 
 ## load packages ##
 library(plyr)
@@ -9,16 +9,16 @@ library(tidyverse)
 library(gaoptim)
 library(abind)
 
-setwd("~/winfree lab/R code")
+setwd("C:/Documents/winfree lab/R code")
 
 ## load the species required function
 source(file="minfinder_function_time.R")
 
 ## file paths and file names ##
-path <- "D:/natal/D_Documents/winfree lab/SQL data/"
-figpath <- "D:/natal/D_Documents/winfree lab/figures"
-rpath <- "D:/natal/D_Documents/winfree lab/R data/"
-outpath <- "D:/natal/D_Documents/winfree lab/BEFresults/"
+path <- "C:/Documents/winfree lab/SQL data/"
+figpath <- "C:/Documents/winfree lab/figures"
+rpath <- "C:/Documents/winfree lab/R data/"
+outpath <- "C:/Documents/winfree lab/BEFresults/"
 
 ## import crop visit data as RData file ##
 crops = c("blue","cran","njwat","cawat")
@@ -45,41 +45,37 @@ if (crop == "cawat") {
 
 summary(df_visits)
 
-
 ## list unique values of each factor ##
 rounds <- sort(unique(df_visits$round))
 years <- sort(unique(df_visits$year))
 species <- sort(unique(df_visits$gen_sp))
 sites <- sort(unique(df_visits$site))
 
-## function threshold percentage (set here for sensitivity)
+## set parameters ##
+
+# function threshold percentage (set here for sensitivity)
 func_percent = 0.50
 
-# function threshold value (aggregate pollen grains) from percentage, using mean across all site-year-rounds
-# df_totalfun = df_visits %>%     # find the total function for each site-year-round
-#                 group_by(round, year, site) %>%
-#                 summarize(totalfun = sum(fun))
-df_totalfun = ddply(df_visits, .(round, year, site), summarize, totalfun = sum(fun))
-
+## find function threshold value (aggregate pollen grains) from percentage, using mean across all site-year-rounds
+df_totalfun = df_visits %>%     # find the total function for each site-year-round
+              group_by(round, year, site) %>%
+              summarize(totalfun = sum(fun))
 func_level = mean(df_totalfun$totalfun, na.rm=T)*func_percent
 
-# rmax set to 1 because we are looking at 1 round at a time
-rmax = 1
+## find species richness at each site ##
+df_richness = df_visits %>%
+              group_by(site, year, round) %>%
+              summarize(crop = crop, richness = length(unique(gen_sp)))
+rich_syr = mean(df_richness$richness) # mean richness at a single site-date
+df_richnesssy = df_visits %>% 
+                group_by(site, year) %>% 
+                summarize(crop = crop, richness = length(unique(gen_sp)))
+rich_sy = mean(df_richnesssy$richness) # mean richness at a single site-year for all days
 
-# convert dataframe to a matrix with species as rows, years as columns, and function as values
-# testing with one site-round
-# in full analysis, this would loop through all sites and rounds
-# choose a single site-round
-# dfsite1 = filter(df_visits, site == "anc") # choose one site
-# srounds = unique(dfsite1$round)
-# dfsiteround1 = filter(dfsite1, round == srounds[2]) # choose one round
-# dfsiteround1 = mutate(dfsiteround1, year=factor(year)) # drop missing years as factors
-# m1 = daply(dfsiteround1, .(gen_sp, year), function(gen_sp) gen_sp$fun, .drop_o=FALSE, .drop_i=T) # convert to matrix with species as rows and years as columns
-# #m1 = m1[apply(!is.na(m1),2,any),drop=FALSE]  # drop years with no data for site s, round r
-# m1[is.na(m1)] = 0  # fill NA with zeros
 
-## main program loops:
-# loop through all sites. For each site-year, we will find the minimum species set at each temporal scale (number of rounds).
+# main program loops ------------------------------------------------------
+
+## loop through all sites. For each site-year, we will find the minimum species set at each temporal scale (number of rounds).
 for (s in c(1:length(sites))) {
   print(paste("site = ",sites[s]))
   dfsite = df_visits[ df_visits$site == sites[s], ] # choose one site
@@ -89,15 +85,15 @@ for (s in c(1:length(sites))) {
     print(paste("year =  ", syears[y]))
     dfsiteyear = dfsite[ dfsite$year == syears[y], ] # choose one year
     dfsiteyear = mutate(dfsiteyear, round=factor(round)) # drop missing rounds as factors
+    dfsiteyear = dfsiteyear[order(dfsiteyear$round, -dfsiteyear$fun),] # sort species by function (high to low)
     syrounds = unique(dfsiteyear$round)
     
     m = daply(dfsiteyear, .(gen_sp, round), function(gen_sp) gen_sp$fun, .drop_o = F, .drop_i = T) # convert to matrix with species as rows and rounds as columns
     m[is.na(m)] = 0  # fill NA with zeros
     m = adrop(m, drop=3)  # drop 3rd array dimension to get matrix
-    #print(m)
 
     # define the matrix of species and years that will go into the optimizer
-    func_output = m
+    func_output = m[order(-m[,1]),] # sort species by 1st day's function value (high to low)
     
     # loop through number of rounds (temporal scale). Here h=3 would be a set of 3 sampling rounds
     for (h in c(1:length(syrounds))) {			# warning, it will take quite a while if you run everything
@@ -123,8 +119,9 @@ for (s in c(1:length(sites))) {
       }
       #print(prereq_species)
       
-      # list all species for this crop, in no particular order
+      # list all species for this crop, in descending order of first day function
       startvector = rownames(func_outputB)
+      rich = length(startvector) # total number of species present in this particular subset of days
       
       # gaoptim optimizer requires >= 3 species. If there are < 3 species at the site-date, calculate min set manually.
       if (length(startvector) < 3) {   # are there < 3 species? if so we won't run optimizer, so n and popsize are N/A
@@ -195,10 +192,6 @@ for (s in c(1:length(sites))) {
       out$evolve(30) 							# evolve for 30 generations
       
       # continue to run the optimizer 1 generation at a time until results do not change for 30 generations
-      # while (   min(out$bestFit()[summary(out)$n:(summary(out)$n-29)]) !=  out$bestFit()[summary(out)$n] ) {
-      #   out$evolve(1)
-      # }  # Error: $ operator is invalid for atomic vectors
-      
       n = 30
       while (   min(out$bestFit()[n:(n-29)]) !=  out$bestFit()[n] ) {
         print(n)
@@ -223,9 +216,9 @@ for (s in c(1:length(sites))) {
       
       # write output to csv, one line at a time.  This way, if program is stopped before complete, the output thusfar will already be saved in the csv
       if (h == 1 & s == 1 & y == 1) {
-        write.table(data.frame("crop" = crop, "site" = sites[s], "year" = syears[y], "nrounds"=h, "start_round" = roundsubset[1], "minsize" = new_min, "generations"=n, "popsize"=nrow(out$population()), "threshold" = func_level, "func_percent" = func_percent, "presets" = paste(presets, collapse=","), "run_type" = "observed_data", "minset" = paste(spreq_list, collapse=",")), file=paste(outpath,"minset_finder_results_", crop, "_observed_", func_percent*100, "_rounds",".csv", sep=""),sep=",",append=F, col.names=T, row.names=F)
+        write.table(data.frame("crop" = crop, "site" = sites[s], "year" = syears[y], "nrounds"=h, "start_round" = roundsubset[1], "minsize" = new_min, "richness" = rich, "generations"=n, "popsize"=nrow(out$population()), "threshold" = func_level, "func_percent" = func_percent, "presets" = paste(presets, collapse=","), "run_type" = "observed_data", "minset" = paste(spreq_list, collapse=",")), file=paste(outpath,"minset_finder_results_", crop, "_observed_", func_percent*100, "_rounds",".csv", sep=""),sep=",",append=F, col.names=T, row.names=F)
       } else {
-        write.table(data.frame("crop" = crop, "site" = sites[s], "year" = syears[y], "nrounds"=h, "start_round" = roundsubset[1], "minsize" = new_min, "generations"=n, "popsize"=nrow(out$population()), "threshold" = func_level, "func_percent" = func_percent, "presets" = paste(presets, collapse=","), "run_type" = "observed_data", "minset" = paste(spreq_list, collapse=",")), file=paste(outpath,"minset_finder_results_", crop, "_observed_", func_percent*100, "_rounds",".csv", sep=""),sep=",",append=T, col.names=F, row.names=F)
+        write.table(data.frame("crop" = crop, "site" = sites[s], "year" = syears[y], "nrounds"=h, "start_round" = roundsubset[1], "minsize" = new_min, "richness" = rich, "generations"=n, "popsize"=nrow(out$population()), "threshold" = func_level, "func_percent" = func_percent, "presets" = paste(presets, collapse=","), "run_type" = "observed_data", "minset" = paste(spreq_list, collapse=",")), file=paste(outpath,"minset_finder_results_", crop, "_observed_", func_percent*100, "_rounds",".csv", sep=""),sep=",",append=T, col.names=F, row.names=F)
       }		
       
     } #  end h years loop (h)
@@ -234,6 +227,8 @@ for (s in c(1:length(sites))) {
   
 } # end s loop
 
+
+# load minset results -----------------------------------------------------
 
 ## load resulting csv files as R data frames and save for future analyses in R ##
 fname1 = "minset_finder_results_blue_observed_50_rounds.csv"

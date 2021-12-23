@@ -4,11 +4,12 @@
 library(tidyverse)
 
 ## file paths and file names ##
-path <- "D:/natal/D_Documents/winfree lab/SQL data/"
-path2 <- "D:/natal/D_Documents/winfree lab/Williams lab data/"
-figpath <- "D:/natal/D_Documents/winfree lab/figures"
-rpath <- "D:/natal/D_Documents/winfree lab/R data"
-outpath <- "D:/natal/D_Documents/winfree lab/BEFresults/"
+path <- "C:/Documents/winfree lab/SQL data/"
+figpath <- "C:/Documents/winfree lab/figures"
+rpath <- "C:/Documents/winfree lab/R data/"
+outpath <- "C:/Documents/winfree lab/BEFresults/"
+path2 <- "C:/Documents/winfree lab/Williams lab data/"
+
 
 fname1 <- "blueberry_visit_table.csv"
 fname2 <- "cranberry_visit_table.csv"
@@ -20,11 +21,8 @@ fname6 <- "Site names_by_ID.csv"
 
 ## import data file as a dataframe ##
 df_visits_blue <- read.csv(paste(path,fname1,sep=""),header=TRUE,stringsAsFactors=FALSE)
-df_visits_cran <- read.csv(paste(path,fname2,sep=""),header=TRUE,stringsAsFactors=FALSE)
 df_visits_njwat <- read.csv(paste(path,fname3,sep=""),header=TRUE,stringsAsFactors=FALSE)
 df_visits_cawat <- read.csv(paste(path2,fname4,sep=""),header=TRUE,stringsAsFactors=FALSE)
-# sitedistwat <- read.csv(paste(path2,fname5,sep=""),header=TRUE,stringsAsFactors=FALSE)
-# sitenameswat <- read.csv(paste(path2,fname6,sep=""),header=TRUE,stringsAsFactors=FALSE)
 
 ## convert columns to correct data types ##
 ## blueberry data
@@ -39,22 +37,12 @@ df_visits_blue = mutate(df_visits_blue, gen_sp = gsub('dup_calc','calcarata', ge
 df_visits_blue = df_visits_blue %>% 
   group_by(round, year, site, gen_sp, svgroup) %>%
   summarize(visits = sum(visits), SV_pollen_tubes = mean(SV_pollen_tubes), SV_pollen_grains = mean(SV_pollen_grains))
+
 # filter out apis mellifera
 df_visits_blue = filter(df_visits_blue, gen_sp != 'Apis_mellifera')
 
 summary(df_visits_blue)
 sort(unique(df_visits_blue$gen_sp))
-
-## cranberry data
-glimpse(df_visits_cran)  # see what current data types are for each column
-df_visits_cran = mutate(df_visits_cran, round=factor(round), year=as.character(year), site=factor(site))
-df_visits_cran$tet_tubes <- as.numeric(df_visits_cran$tet_tubes)
-df_visits_cran$tet_notubes <- as.numeric(df_visits_cran$tet_notubes)
-meantubes   = mean(df_visits_cran$tet_tubes, na.rm=TRUE) ## fill in NA values with mean function for all species groups
-meannotubes = mean(df_visits_cran$tet_notubes, na.rm=TRUE)
-df_visits_cran$tet_tubes[is.na(df_visits_cran$tet_tubes)] <- meantubes
-df_visits_cran$tet_notubes[is.na(df_visits_cran$tet_notubes)] <- meannotubes
-summary(df_visits_cran)
 
 ## nj watermelon
 glimpse(df_visits_njwat)
@@ -73,7 +61,9 @@ df_visits_njwat = df_visits_njwat %>%
 # fill in NA values with mean function for all species groups
 meantubes  = mean(df_visits_njwat$SV_pollen, na.rm=TRUE)  
 df_visits_njwat$SV_pollen[is.na(df_visits_njwat$SV_pollen)] = meantubes
-df_visits_njwat = filter(df_visits_njwat, year!="0")  # remove 2 obs with no year or date listed
+
+# remove 2 obs with no year or date listed
+df_visits_njwat = filter(df_visits_njwat, year!="0")  
 #filter(df_visits_njwat, site=="del")
 
 summary(df_visits_njwat)
@@ -84,8 +74,8 @@ glimpse(df_visits_cawat)
 sort(unique(df_visits_cawat$bee_sps))
 
 # # join site names to site distances to see which names correspond to the same site
-# watsites <- full_join(sitedistwat, sitenameswat, by=c("ï..SiteID" = "SiteID"))
-# watsites = watsites %>% relocate(Site_common, .after = "ï..SiteID")
+# watsites <- full_join(sitedistwat, sitenameswat, by=c("Ã¯..SiteID" = "SiteID"))
+# watsites = watsites %>% relocate(Site_common, .after = "Ã¯..SiteID")
 # watsites = watsites %>% relocate(Site_name, .after = "Site_common")
 # watsites = left_join(watsites, sitenameswat, by=c("TargetSiteID" = "SiteID"))
 # watsites = watsites %>% relocate(Site_common.y, .after = "TargetSiteID")
@@ -121,15 +111,15 @@ df_visits_cawat = rename(df_visits_cawat, gen_sp=bee_sps)
 levels(df_visits_cawat$site)
 
 ## save as R files ##
-save(df_visits_blue, file=paste(rpath,'/','df_visits_blue.RData',sep=''))
-save(df_visits_cran, file=paste(rpath,'/','df_visits_cran.RData',sep=''))
-save(df_visits_njwat, file=paste(rpath,'/','df_visits_njwat_all.RData',sep=''))
-save(df_visits_cawat, file=paste(rpath,'/','df_visits_cawat.RData',sep=''))
+save(df_visits_blue, file=paste(rpath,'df_visits_blue.RData',sep=''))
+save(df_visits_cran, file=paste(rpath,'df_visits_cran.RData',sep=''))
+save(df_visits_njwat, file=paste(rpath,'df_visits_njwat_all.RData',sep=''))
+save(df_visits_cawat, file=paste(rpath,'df_visits_cawat.RData',sep=''))
 
 # filter out year 2004 for nj wat
 df_visits_njwat = filter(df_visits_njwat, year != "2004")
 df_visits_njwat = mutate(df_visits_njwat, site=factor(site), year=factor(year), round=factor(round))
-save(df_visits_njwat, file=paste(rpath,'/','df_visits_njwat.RData',sep=''))
+save(df_visits_njwat, file=paste(rpath,'df_visits_njwat.RData',sep=''))
 
 # filter out sites sampled only one year for ca wat
 cawat_samples <- df_visits_cawat %>%

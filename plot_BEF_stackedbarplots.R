@@ -9,12 +9,12 @@ library(forcats)
 library(RColorBrewer)
 
 ## file paths ##
-figpath <- "D:/natal/D_Documents/winfree lab/figures"
-rpath <- "D:/natal/D_Documents/winfree lab/R data/"
+figpath <- "C:/Documents/winfree lab/figures"
+rpath <- "C:/Documents/winfree lab/R data/"
 
 ## import crop visit data as RData files ##
-crops = c("blue","cran","njwat","cawat")
-cropnames = c("Blueberry", "Cranberry", "NJ Watermelon", "CA Watermelon")
+crops = c("blue","njwat","cawat")
+cropnames = c("Blueberry", "NJ Watermelon", "CA Watermelon")
 
 for (c in crops){
   fname = paste(rpath,"df_visits_",c,".RData",sep='')

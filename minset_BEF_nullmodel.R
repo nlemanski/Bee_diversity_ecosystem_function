@@ -3,8 +3,6 @@
 # change in minimum set w/ number of samples taken from same day includes sampling effects only
 # change in minimum set w/ number of samples taken from different days includes both sampling effects and phenological turnover
 
-# edited NJL 8.16.2021, 11.18.2021
-
 ## load packages ##
 library(plyr)
 library(reshape)
@@ -17,17 +15,17 @@ library(car)
 library(performance)
 library(effects)
 
-setwd("C:/Documents/winfree lab/R code")
+setwd("C:/Documents/Bee_diversity_ecosystem_function/R code")
 
 ## load the species required function
 source(file="minfinder_function_time.R")
 
 ## file paths and file names ##
-path <- "C:/Documents/winfree lab/SQL data/"
-figpath <- "C:/Documents/winfree lab/figures/"
-rpath <- "C:/Documents/winfree lab/R data/"
-outpath <- "C:/Documents/winfree lab/BEF null model results/"
-altpath <- "C:/Documents/winfree lab/alt null model results/"
+path <- "C:/Documents/Bee_diversity_ecosystem_function/SQL data/"
+figpath <- "C:/Documents/Bee_diversity_ecosystem_function/figures/"
+rpath <- "C:/Documents/Bee_diversity_ecosystem_function/R data/"
+outpath <- "C:/Documents/Bee_diversity_ecosystem_function/BEF null model results/"
+altpath <- "C:/Documents/Bee_diversity_ecosystem_function/alt null model results/"
 
 ## define crops and select crop to analyze ##
 crops = c("blue","njwat","cawat")

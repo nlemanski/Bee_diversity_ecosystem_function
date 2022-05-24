@@ -1,19 +1,21 @@
 ### sensitivity analysis of pollination threshold ###
-# edited by NJL 3.15.22
 
+# select crop
 crop = "njwat"
+
+# set range of threshold values to examine (10% to 90%)
 funcpercs = seq(0.1,0.9,0.1)
 
 ## run minimum set analysis for different levels of function thresh --------
 # across years
 for (t in funcpercs){
   func_percent = t
-  source("C:/Users/natal/OneDrive - Rutgers University/Documents/winfree lab/R code/minset_years_BEF_new.R")
+  source("C:/Documents/Bee_diversity_ecosystem_function/R code/minset_years_BEF_new.R")
 }
 # within years, across season
 for (t in funcpercs){
   func_percent = t
-  source("C:/Users/natal/OneDrive - Rutgers University/Documents/winfree lab/R code/minset_rounds_BEF.R")
+  source("C:/Documents/Bee_diversity_ecosystem_function/R code/minset_rounds_BEF.R")
 }
 
 
@@ -24,15 +26,14 @@ library(effects)
 library(cowplot)
 
 ## file paths and file names ##
-figpath <- "C:/Users/natal/OneDrive - Rutgers University/Documents/winfree lab/figures/"
-rpath <- "C:/Users/natal/OneDrive - Rutgers University/Documents/winfree lab/R data/"
-outpath <- "C:/Users/natal/OneDrive - Rutgers University/Documents/winfree lab/BEF sensitivity/"
+figpath <- "C:/Documents/Bee_diversity_ecosystem_function//figures/"
+rpath <- "C:/Documents/Bee_diversity_ecosystem_function/R data/"
+outpath <- "C:/Documents/Bee_diversity_ecosystem_function/BEF sensitivity/"
 
 ## crop names and parameters ## ------------------------------------------
 crops = c("blue","njwat","cawat")
 cropnames = c("blue"="Blueberry","njwat"="Eastern Watermelon","cawat"="Western Watermelon")
 subplot_letters <- data.frame(letter = c("a", "b", "c"), crop  = crops) # for labelling the panels in plots
-# thresholds = c('25', '50', '75')
 thresholds = as.character(funcpercs*100)
 rmax = 1
 
@@ -235,3 +236,6 @@ pincyca = effyca %>% group_by(func_percent) %>%
 # make a table showing the percent increase in species needed for all years vs function threshold
 pincy = join(pincyb, pincynj) %>% join(pincyca)
 write.csv(pincy, paste(outpath,"percentincrease_years.csv",sep=''), row.names = F)
+
+
+

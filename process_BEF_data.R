@@ -4,15 +4,14 @@
 library(tidyverse)
 
 ## file paths and file names ##
-path <- "C:/Documents/winfree lab/SQL data/"
-figpath <- "C:/Documents/winfree lab/figures"
-rpath <- "C:/Documents/winfree lab/R data/"
-outpath <- "C:/Documents/winfree lab/BEFresults/"
-path2 <- "C:/Documents/winfree lab/Williams lab data/"
+path <- "C:/Documents/Bee_diversity_ecosystem_function/SQL data/"
+figpath <- "C:/Documents/Bee_diversity_ecosystem_function/figures"
+rpath <- "C:/Documents/Bee_diversity_ecosystem_function/R data/"
+outpath <- "C:/Documents/Bee_diversity_ecosystem_function/BEFresults/"
+path2 <- "C:/Documents/Bee_diversity_ecosystem_function/Williams lab data/"
 
 
 fname1 <- "blueberry_visit_table.csv"
-fname2 <- "cranberry_visit_table.csv"
 fname3 <- "watermelon_visit_table.csv"
 fname4 <- "ca_wat_visits.csv"
 fname5 <- "Wat_allsites_years_distances.csv"

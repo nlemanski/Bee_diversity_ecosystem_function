@@ -4,14 +4,14 @@ library(reshape)
 library(tidyverse)
 
 ## file paths and file names ##
-path <- "C:/Documents/winfree lab/SQL data/"
-figpath <- "C:/Documents/winfree lab/figures"
-rpath <- "C:/Documents/winfree lab/R data/"
-outpath <- "C:/Documents/winfree lab/BEFresults/"
+path <- "C:/Documents/Bee_diversity_ecosystem_function/SQL data/"
+figpath <- "C:/Documents/Bee_diversity_ecosystem_function/figures"
+rpath <- "C:/Documents/Bee_diversity_ecosystem_function/R data/"
+outpath <- "C:/Documents/Bee_diversity_ecosystem_function/BEFresults/"
 
 ## import crop visit data as RData file ##
-crops = c("blue","cran","njwat","cawat")
-cropnames = c("Blueberry", "Cranberry", "NJ Watermelon", "CA Watermelon")
+crops = c("blue","njwat","cawat")
+cropnames = c("Blueberry", "NJ Watermelon", "CA Watermelon")
 
 load(paste(rpath,'df_visits_cawat.RData',sep=''))  # load data
 load(paste(rpath,'df_visits_blue.RData',sep=''))  # load data

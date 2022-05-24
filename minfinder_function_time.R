@@ -80,11 +80,14 @@ minfinder = function(v) {
 	}
 
 	# save species required for this rep (uses global assignment outside this function):
-	spreq_list <<- rownames(df_req)
+	#spreq_list <<- rownames(df_req)  ## original code
+	spreq_list <<- rbind(spreq_list, paste(rownames(df_req), collapse=","))
 	
-	# convert to a value that can be maximized by the genetic algorithm.  The fitness function only works on maximums, not minimums.  Also, it only works with positive fitness values, so we use 1/x instead -x.
+	# convert to a value that can be maximized by the genetic algorithm.  The fitness function only works on maximums, not minimums.  
+	# Also, it only works with positive fitness values, so we use 1/x instead -x.
 	# later, we will have to back-convert to get the minimum number of species.
 	thismin = 1/nrow(df_req)
+	# min_list <<- rbind(min_list, thismin)  # save minimum set size for this rep to check match with species required list
 	
 	return(thismin)
 				

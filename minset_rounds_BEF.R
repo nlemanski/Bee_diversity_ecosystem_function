@@ -1,6 +1,5 @@
 ## Find the minimum set of species needed to meet a pollination function threshold for all rounds in a given timescale ##
 # repeat analysis for each site-year
-# edited NJL 5/4/2021, 8/20/2021
 
 ## load packages ##
 library(plyr)
@@ -9,25 +8,23 @@ library(tidyverse)
 library(gaoptim)
 library(abind)
 
-setwd("C:/Documents/winfree lab/R code")
+setwd("C:/Documents/Bee_diversity_ecosystem_function/R code")
 
 ## load the species required function
 source(file="minfinder_function_time.R")
 
 ## file paths and file names ##
-path <- "C:/Documents/winfree lab/SQL data/"
-figpath <- "C:/Documents/winfree lab/figures"
-rpath <- "C:/Documents/winfree lab/R data/"
-outpath <- "C:/Documents/winfree lab/BEFresults/"
+path <- "C:/Documents/Bee_diversity_ecosystem_function/SQL data/"
+figpath <- "C:/Documents/Bee_diversity_ecosystem_function/figures/"
+rpath <- "C:/Documents/Bee_diversity_ecosystem_function/R data/"
+outpath <- "C:/Documents/Bee_diversity_ecosystem_function/BEFresults/"
+
 
 ## import crop visit data as RData file ##
 crops = c("blue","cran","njwat","cawat")
 cropnames = c("Blueberry", "Cranberry", "NJ Watermelon", "CA Watermelon")
 # make sure crop name matches data file name
 crop = "njwat"
-# fname = paste(rpath,'df_visits_',crop,'.RData',sep='')
-# load(fname)
-# df_visits <- df_visits_cawat
 
 if (crop == "cawat") {
   load(paste(rpath,'df_visits_cawat.RData',sep=''))  # load data
@@ -54,12 +51,15 @@ sites <- sort(unique(df_visits$site))
 ## set parameters ##
 
 # function threshold percentage (set here for sensitivity)
-func_percent = 0.50
+func_percent = 0.50  # uncomment for main analysis
+# func_percent = 0.25  # uncomment for sensitivity analysis
+# func_percent = 0.75  # uncomment for sensitivity analysis
 
 ## find function threshold value (aggregate pollen grains) from percentage, using mean across all site-year-rounds
 df_totalfun = df_visits %>%     # find the total function for each site-year-round
               group_by(round, year, site) %>%
               summarize(totalfun = sum(fun))
+
 func_level = mean(df_totalfun$totalfun, na.rm=T)*func_percent
 
 ## find species richness at each site ##
@@ -93,7 +93,7 @@ for (s in c(1:length(sites))) {
     m = adrop(m, drop=3)  # drop 3rd array dimension to get matrix
 
     # define the matrix of species and years that will go into the optimizer
-    func_output = m[order(-m[,1]),] # sort species by 1st day's function value (high to low)
+    func_output = m[order(-m[,1]),,drop=F] # sort species by 1st day's function value (high to low)
     
     # loop through number of rounds (temporal scale). Here h=3 would be a set of 3 sampling rounds
     for (h in c(1:length(syrounds))) {			# warning, it will take quite a while if you run everything
@@ -103,7 +103,6 @@ for (s in c(1:length(sites))) {
       
       # subset of h rounds, starting with earliest
       roundsubset = syrounds[1:h]
-      print(roundsubset)
       
       # select the columns for the rounds that are in this round subset (1 to 9 rounds):
       func_outputB = func_output[,colnames(func_output) %in% roundsubset, drop=FALSE]
@@ -117,7 +116,6 @@ for (s in c(1:length(sites))) {
       } else {
         prereq_species = character(0)	# if not, there will be no pre-required species.
       }
-      #print(prereq_species)
       
       # list all species for this crop, in descending order of first day function
       startvector = rownames(func_outputB)
@@ -194,8 +192,8 @@ for (s in c(1:length(sites))) {
       # continue to run the optimizer 1 generation at a time until results do not change for 30 generations
       n = 30
       while (   min(out$bestFit()[n:(n-29)]) !=  out$bestFit()[n] ) {
-        print(n)
-        print(out$bestFit()[n])
+        # print(n)
+        # print(out$bestFit()[n])
         n = n+1
         out$evolve(1)
       }
@@ -212,13 +210,20 @@ for (s in c(1:length(sites))) {
       } else {
         presets = prereq_species
       }
-      print(spreq_list)
       
       # write output to csv, one line at a time.  This way, if program is stopped before complete, the output thusfar will already be saved in the csv
       if (h == 1 & s == 1 & y == 1) {
-        write.table(data.frame("crop" = crop, "site" = sites[s], "year" = syears[y], "nrounds"=h, "start_round" = roundsubset[1], "minsize" = new_min, "richness" = rich, "generations"=n, "popsize"=nrow(out$population()), "threshold" = func_level, "func_percent" = func_percent, "presets" = paste(presets, collapse=","), "run_type" = "observed_data", "minset" = paste(spreq_list, collapse=",")), file=paste(outpath,"minset_finder_results_", crop, "_observed_", func_percent*100, "_rounds",".csv", sep=""),sep=",",append=F, col.names=T, row.names=F)
+        write.table(data.frame("crop" = crop, "site" = sites[s], "year" = syears[y], "nrounds"=h, "start_round" = roundsubset[1], "minsize" = new_min, 
+                               "richness" = rich, "generations"=n, "popsize"=nrow(out$population()), "threshold" = func_level, "func_percent" = func_percent, 
+                               "presets" = paste(presets, collapse=","), "run_type" = "observed_data", "minset" = paste(spreq_list, collapse=",")), 
+                    file = paste(outpath,"minset_finder_results_", crop, "_observed_", func_percent*100, "_rounds",".csv", sep=""),
+                    sep=",",append=F, col.names=T, row.names=F)
       } else {
-        write.table(data.frame("crop" = crop, "site" = sites[s], "year" = syears[y], "nrounds"=h, "start_round" = roundsubset[1], "minsize" = new_min, "richness" = rich, "generations"=n, "popsize"=nrow(out$population()), "threshold" = func_level, "func_percent" = func_percent, "presets" = paste(presets, collapse=","), "run_type" = "observed_data", "minset" = paste(spreq_list, collapse=",")), file=paste(outpath,"minset_finder_results_", crop, "_observed_", func_percent*100, "_rounds",".csv", sep=""),sep=",",append=T, col.names=F, row.names=F)
+        write.table(data.frame("crop" = crop, "site" = sites[s], "year" = syears[y], "nrounds"=h, "start_round" = roundsubset[1], "minsize" = new_min, 
+                               "richness" = rich, "generations"=n, "popsize"=nrow(out$population()), "threshold" = func_level, "func_percent" = func_percent, 
+                               "presets" = paste(presets, collapse=","), "run_type" = "observed_data", "minset" = paste(spreq_list, collapse=",")), 
+                    file=paste(outpath,"minset_finder_results_", crop, "_observed_", func_percent*100, "_rounds",".csv", sep=""),
+                    sep=",",append=T, col.names=F, row.names=F)
       }		
       
     } #  end h years loop (h)
@@ -229,34 +234,23 @@ for (s in c(1:length(sites))) {
 
 
 # load minset results -----------------------------------------------------
+if (crop=="blue") {
+  df_rounds_blue  = read.csv(paste(outpath,"minset_finder_results_blue_observed_",func_percent*100,"_rounds.csv",sep=""),header=TRUE,stringsAsFactors=F)
+  df_rounds_blue  = mutate(df_rounds_blue, crop=factor(crop), site=factor(site), year=factor(year), start_round=factor(start_round))
+  save(df_rounds_blue, file=paste(rpath,"df_minset_rounds_blue_",func_percent*100,".RData",sep=''))
+} else if (crop=="njwat") {
+  df_rounds_njwat = read.csv(paste(outpath2,"minset_finder_results_njwat_observed_",func_percent*100,"_rounds.csv",sep=""),header=TRUE,stringsAsFactors=F)
+  df_rounds_njwat = mutate(df_rounds_njwat, crop=factor(crop), site=factor(site), year=factor(year), start_round=factor(start_round))
+  save(df_rounds_njwat, file=paste(rpath,"df_minset_rounds_njwat_",func_percent*100,".RData",sep=''))
+} else if (crop=="cawat") {
+  df_rounds_cawat = read.csv(paste(outpath,"minset_finder_results_cawat_observed_",func_percent*100,"_rounds.csv",sep=""),header=TRUE,stringsAsFactors=F)
+  df_rounds_cawat = mutate(df_rounds_cawat, crop=factor(crop), site=factor(site), year=factor(year), start_round=factor(start_round))
+  save(df_rounds_cawat, file=paste(rpath,"df_minset_rounds_cawat_",func_percent*100,".RData",sep=''))
+} else { print("Crop not found") }
 
 ## load resulting csv files as R data frames and save for future analyses in R ##
-fname1 = "minset_finder_results_blue_observed_50_rounds.csv"
-fname2 = "minset_finder_results_cran_observed_50_rounds.csv"
-fname3 = "minset_finder_results_njwat_observed_50_rounds.csv"
-fname4 = "minset_finder_results_cawat_observed_50_rounds.csv"
-
-df_rounds_blue  = read.csv(paste(outpath,fname1,sep=""),header=TRUE,stringsAsFactors=F)
-df_rounds_cran  = read.csv(paste(outpath,fname2,sep=""),header=TRUE,stringsAsFactors=F)
-df_rounds_njwat = read.csv(paste(outpath,fname3,sep=""),header=TRUE,stringsAsFactors=F)
-df_rounds_cawat = read.csv(paste(outpath,fname4,sep=""),header=TRUE,stringsAsFactors=F)
-
-# view data frames
-glimpse(df_rounds_blue)
-glimpse(df_rounds_cran)
-glimpse(df_rounds_njwat)
-glimpse(df_rounds_cawat)
-
 ## convert to correct data types ##
-df_rounds_blue  = mutate(df_rounds_blue, crop=factor(crop), site=factor(site), year=factor(year), start_round=factor(start_round))
-df_rounds_cran  = mutate(df_rounds_cran, crop=factor(crop), site=factor(site), year=factor(year), start_round=factor(start_round))
-df_rounds_njwat = mutate(df_rounds_njwat, crop=factor(crop), site=factor(site), year=factor(year), start_round=factor(start_round))
-df_rounds_cawat = mutate(df_rounds_cawat, crop=factor(crop), site=factor(site), year=factor(year), start_round=factor(start_round))
-summary(df_rounds_cawat)
-
 ## save as R data for future use ##
-save(df_rounds_blue, file=paste(rpath,"df_minset_rounds_blue.RData",sep=''))
-save(df_rounds_cran, file=paste(rpath,"df_minset_rounds_cran.RData",sep=''))
-save(df_rounds_njwat, file=paste(rpath,"df_minset_rounds_njwat.RData",sep=''))
-save(df_rounds_cawat, file=paste(rpath,"df_minset_rounds_cawat.RData",sep=''))
+
+df_rounds_njwat %>% group_by(nrounds) %>% summarize(minsize = mean(minsize))
 

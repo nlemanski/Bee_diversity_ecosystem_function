@@ -11,12 +11,11 @@ library(ggfortify) # for autoplot
 library(broom) 	# for augment
 library(performance)
 library(effects)
-# library(lmerTest)
 
 ## file paths ##
-figpath <- "C:/Documents/winfree lab/figures/"
-rpath <- "C:/Documents/winfree lab/R data/"
-respath <- "C:/Documents/winfree lab/BEFresults/"
+figpath <- "C:/Documents/Bee_diversity_ecosystem_function/figures/"
+rpath <- "C:/Documents/Bee_diversity_ecosystem_function/R data/"
+respath <- "C:/Documents/Bee_diversity_ecosystem_function/BEFresults/"
 
 ## load data ##
 threshold = 0.5
@@ -28,6 +27,7 @@ for (c in crops){
   load(fname1)
   load(fname2)
 }
+
 # load across-years data for nj wat with 1 and 3 rounds included
 fname3 = paste(rpath,"df_minset_years_njwat_1round",'.RData',sep='')
 load(fname3)
@@ -36,149 +36,72 @@ fname4 = paste(rpath,"df_minset_years_njwat_3round",'.RData',sep='')
 load(fname4)
 df_years_njwat_3r = df_years_njwat
 
-## functions ##
-ggplotRegression <- function (fit) {
-  
-  require(ggplot2)
-  
-  ggplot(fit$model, aes_string(x = names(fit$model)[2], y = names(fit$model)[1])) + 
-    geom_point() +
-    stat_smooth(method = "lm", col = "red") +
-    labs(title = paste("Adj R2 = ",signif(summary(fit)$adj.r.squared, 5),
-                       "Intercept =",signif(fit$coef[[1]],5 ),
-                       " Slope =",signif(fit$coef[[2]], 5),
-                       " P =",signif(summary(fit)$coef[2,4], 5)))
-}
-
-### stats analysis of minimum species needed for 50% pollination  vs. number of years in analysis ###
-
+# stats analysis of minimum species vs number of years --------
 ## visualize blueberry data to see if linear model will fit ##
 hist(df_years_blue$minsize)  # data is right tailed
 hist(log(df_years_blue$minsize))
 bluenorm = fitdistr(df_years_blue$minsize, densfun="normal")
 curve(dnorm(x, bluenorm$estimate[1], bluenorm$estimate[2]), col="red", lwd=2, add=T)
 
-## fit lmm for blueberry with number of years as x var and number of species in minimum set as y var ##
-lmer_blue <- lmer(minsize ~ nyears + (1|site),
-                data=df_years_blue)
-summary(lmer_blue)
-Anova(lmer_blue)
-
-qqnorm(residuals(lmer_blue))
-abline(0,1)
-
-# plot fitted values vs residuals
-plot(fitted(lmer_blue), residuals(lmer_blue), xlab = "Fitted Values", ylab = "Residuals")
-abline(h = 0, lty = 2)
-lines(smooth.spline(fitted(2), residuals(lmer_blue)))
-
-# check model assumptions
-check_singularity(lmer_blue) # no singularity
-check_heteroscedasticity(lmer_blue) # no heteroscedasticity detected
-check_model(lmer_blue) # residuals look bimodal
-plot(lmer_blue)
-
-## fit a linear model with no random effects
-lmblue2 <- lm(minsize ~ nyears, data=df_years_blue)
-check_model(lmblue2)
-autoplot(lmblue2)
-
-## fit a glmm with a poisson distribution ##
-# poisson makes sense because data is based on counts and has a lower bound of 1
-glm_blue = glm(minsize ~ nyears, data=df_years_blue, family = "poisson")
-summary(glm_blue)
-Anova(glm_blue)
-
-# look at distribution of residuals
-qqnorm(residuals(glm_blue))
-abline(0,1)
-autoplot(glm_blue)
-hist(glm_blue$resid)
-
-# fit glmer with poisson family, random effect of site
-glmer_blue = glmer(minsize ~ nyears + (1|site), 
+# fit glmer with poisson family, random intercept for site
+glmmblue = glmer(minsize ~ nyears + (1|site), 
                    data=df_years_blue, family = "poisson")
-summary(glmer_blue)
-Anova(glmer_blue)
+summary(glmmblue)
+Anova(glmmblue)
 
 # look at distribution of residuals
-qqnorm(residuals(glmer_blue))
+qqnorm(residuals(glmmblue))
 abline(0,1)
-plot(glmer_blue)
 
 # check for model assumptions
-check_overdispersion(glmer_blue) # no overdispersion detected
-check_singularity(glmer_blue) # no singularity
-check_heteroscedasticity(glmer_blue) # no heteroscedasticity detected
-check_model(glmer_blue)
+check_overdispersion(glmmblue) # no overdispersion detected
+check_singularity(glmmblue) # no singularity
+check_heteroscedasticity(glmmblue) # no heteroscedasticity detected
+check_model(glmmblue)
 
 # fit glmm with random slopes and intercepts
-glmer_blue_full <- glmer(minsize ~ nyears + (1 + nyears | site), 
+glmmblue_full <- glmer(minsize ~ nyears + (1 + nyears | site), 
                          data=df_years_blue, family = "poisson")
-isSingular(glmer_blue_full)  # singular fit
+isSingular(glmmblue_full)  # singular fit
+summary(glmmblue_full)
 
-summary(glmer_blue_full)
-
-## compare AIC of different models
-aicblue = AIC(lmblue2, lmer_blue, glm_blue, glmer_blue, glmer_blue_full)
+## compare AIC of full vs intercept only mixed models
+aicblue = AIC(glmmblue, glmmblue_full)
 aicblue = aicblue[order(aicblue$AIC),]
-# linear model with site as random effect has lowest AIC
-compareblue = compare_performance(lmblue2, lmer_blue, glm_blue, glmer_blue, glmer_blue_full, rank=T)
+aicblue  # intercept only model has lower AIC
+compareblue = compare_performance(glmmblue, glmmblue_full, rank=T)
 write.csv(compareblue, paste(respath,"modelcompare_years_blue.csv",sep=''))
+AICtable <- data.frame(aicblue) %>% mutate(mod = row.names(aicblue), crop = 'blue', timescale = 'across')
 
-# save output of lmm
-fnamecoeff = paste(respath,"lmm_coeff_","blue","years",".csv",sep="")
-fnameanova = paste(respath,"lmm_anova_","blue","years",".csv",sep="")
-write.csv(summary(lmer_blue)$coefficients,fnamecoeff)
-write.csv(Anova(lmer_blue),fnameanova)
-
-# save output of glmm
+# save output of glmm w/ lowest AIC
 fnamecoeff = paste(respath,"glmm_coeff_","blue","years",".csv",sep="")
 fnameanova = paste(respath,"glmm_anova_","blue","years",".csv",sep="")
-write.csv(summary(glmer_blue)$coefficients,fnamecoeff)
-write.csv(Anova(glmer_blue),fnameanova)
+write.csv(summary(glmmblue)$coefficients,fnamecoeff)
+write.csv(Anova(glmmblue),fnameanova)
+r2(glmmblue)
 
-effblue = as.data.frame(effect(term="nyears", mod=glmer_blue))
+effblue = as.data.frame(effect(term="nyears", mod=glmmblue))
 write.csv(effblue,paste(respath,'blue_years_effects.csv',sep=''))
 
+# find factor increase and percent increase in species needed w/ number of years over whole time period
+pincyb = effblue %>% summarize(finc = last(fit)/first(fit), pinc = 100*(last(fit)-first(fit))/first(fit))
 
-## fit a lmm for NJ watermelon  with number of years as x var and number of species in minimum set as y var ##
+# put results from best model in data frame dfr2
+dfr2 = data.frame(crop='blue', timescale = 'across', model='int_only', r2m=r2(glmmblue)[2], r2c=r2(glmmblue)[1],
+                  slope = summary(glmmblue)$coefficients[2], slopese = summary(glmmblue)$coefficients[4], 
+                  int=summary(glmmblue)$coefficients[1], intse = summary(glmmblue)$coefficients[3],
+                  percinc = pincyb$pinc)
+
+## fit a glmm for NJ watermelon  with number of years as x var and number of species in minimum set as y var ##
 # stats with 1 sampling round per year
 # visualize data
 hist(df_years_njwat_1r$minsize) # data is sort of bimodal
 hist(log(df_years_njwat_1r$minsize))
 
-# lmm with site as random effect
-lmmnjwat <- lmer(minsize ~ nyears + (1|site),
-                 data=df_years_njwat_1r)
-summary(lmmnjwat)
-plot(lmmnjwat)
-qqnorm(residuals(lmmnjwat))
-abline(0,1)
-
-# check for model assumptions
-check_singularity(lmmnjwat)
-check_heteroscedasticity(lmmnjwat)  # no heterosc. detected, p = 0.894
-check_model(lmmnjwat) # residuals look super normal
-
-# lm
-lmnjwat <- lm(minsize ~ nyears,
-              data=df_years_njwat_1r)
-summary(lmnjwat)
-plot(lmnjwat)
-qqnorm(residuals(lmnjwat))
-abline(0,1)
-
-# check for model assumptions
-check_singularity(lmnjwat)
-check_heteroscedasticity(lmnjwat)  # no heterosc. detected, p = 0.431
-check_model(lmnjwat)
-
-# glmm with site as random effect
+# glmm with site as random intercept, using data for nj watermelon w/ only 1 sampling round per year
 glmmnjwat <- glmer(minsize ~ nyears + (1|site),
                    data=df_years_njwat_1r, family = "poisson")
 summary(glmmnjwat)
-plot(glmmnjwat)
 
 # check for model assumptions
 check_singularity(glmmnjwat)
@@ -186,18 +109,7 @@ check_heteroscedasticity(glmmnjwat)  # no heterosc. detected, p = 0.208
 check_overdispersion(glmmnjwat) # no overdisp detected, disp ratio = 0.516, pearson's chi sq = 56.226, p = 1
 check_model(glmmnjwat)
 
-# glm with no random effect
-glmnjwat <- glm(minsize ~ nyears,
-                   data=df_years_njwat_1r, family = "poisson")
-summary(glmnjwat)
-
-# check for model assumptions
-check_singularity(glmnjwat)
-check_heteroscedasticity(glmnjwat)  # no heterosc. detected, p = 0.179
-check_overdispersion(glmnjwat) # overdisp detected for glm, p < 0.001
-check_model(glmnjwat)
-
-# check model with random slope and intercept
+# nj watermelon model with site as random slope and intercept
 glmmnjwatfull <- glmer(minsize ~ nyears + (1 + nyears | site),
                    data=df_years_njwat_1r, family = "poisson")
 summary(glmmnjwatfull)
@@ -207,71 +119,47 @@ check_overdispersion(glmmnjwatfull) # no overdispersion
 check_heteroscedasticity(glmmnjwatfull) # not heterosced.
 
 # compare models for nj wat data
-comparenjwat = compare_performance(lmnjwat,lmmnjwat,glmnjwat,glmmnjwat, glmmnjwatfull, rank=T)  
-# highest score is for glmm w/ random effects
+aicnjwat = AIC(glmmnjwat, glmmnjwatfull)
+aicnjwat = aicnjwat[order(aicnjwat$AIC),]
+comparenjwat = compare_performance(glmmnjwat, glmmnjwatfull, rank=T)  
+comparenjwat # lowest AIC is for glmm w/ random slope and intercept
 write.csv(comparenjwat, paste(respath,"modelcompare_years_njwat_1round.csv",sep=''), row.names = F)
+# save the aic comparison to a table for Table S6
+AICtable <- rbind(AICtable, data.frame(aicnjwat) %>% mutate(mod = row.names(aicnjwat), crop = 'njwat', timescale = 'across'))
 
-# run anova and save output to file
-# glmm with random intercepts
-fnamecoeff = paste(respath,"glmm_coeff_","njwat","years_1round",".csv",sep="")
-fnameanova = paste(respath,"glmm_anova_","njwat","years_1round",".csv",sep="")
-write.csv(summary(glmmnjwat)$coefficients,fnamecoeff)
-write.csv(Anova(glmmnjwat),fnameanova)
-
+# run anova for lowest AIC model and save output to file
 # glmm with random slope and intercepts
 fnamecoeff = paste(respath,"glmmfull_coeff_","njwat","years_1round",".csv",sep="")
 fnameanova = paste(respath,"glmmfull_anova_","njwat","years_1round",".csv",sep="")
 write.csv(summary(glmmnjwatfull)$coefficients,fnamecoeff)
 write.csv(Anova(glmmnjwatfull),fnameanova)
+r2(glmmnjwatfull)
 
+# save estimated effect sizes for lowest aic model to file
 effnjwat = as.data.frame(effect(term="nyears", mod=glmmnjwatfull))
 write.csv(effnjwat, paste(respath,"njwat_years_effects.csv",sep=''))
 
-# lmm with random intercepts
-fnamecoeff = paste(respath,"lmm_coeff_","njwat","years_1round",".csv",sep="")
-fnameanova = paste(respath,"lmm_anova_","njwat","years_1round",".csv",sep="")
-write.csv(summary(lmmnjwat)$coefficients,fnamecoeff)
-write.csv(Anova(lmmnjwat),fnameanova)
+# find factor increase and percent increase in species needed w/ number of years over whole time period
+pincynj = effnjwat %>% summarize(finc = last(fit)/first(fit), pinc = 100*(last(fit)-first(fit))/first(fit))
 
-## fit a lmm for CA watermelon  with number of years as x var and number of species in minimum set as y var ##
+# add r2 and effect sizes to dataframe
+dfr2 = rbind(dfr2, 
+             data.frame(crop='njwat', timescale = 'across', model='full', r2m=r2(glmmnjwatfull)[2], r2c=r2(glmmnjwatfull)[1],
+                        slope = summary(glmmnjwatfull)$coefficients[2], slopese = summary(glmmnjwatfull)$coefficients[4], 
+                        int=summary(glmmnjwatfull)$coefficients[1], intse = summary(glmmnjwatfull)$coefficients[3],
+                        percinc = pincynj$pinc )) %>% remove_rownames()
+
+## fit a glmm for CA watermelon  with number of years as x var and number of species in minimum set as y var ##
 hist(df_years_cawat$minsize, breaks=7) # left skewed
 hist(log(df_years_cawat$minsize))
 
-# lmm with site as random effect
-lmmcawat <- lmer(minsize ~ nyears + (1|site),
-                data=df_years_cawat)
-summary(lmmcawat)
-plot(lmmcawat)
-qqnorm(residuals(lmmcawat))
-abline(0,1)
-hist(residuals(lmmcawat))
-
-# check for model assumptions
-check_singularity(lmmcawat)
-check_heteroscedasticity(lmmcawat)  # no heterosc. detected, p = 0.798
-check_model(lmmcawat)  # residuals look normal
-
-# lm with no random effect
-lmcawat <- lm(minsize ~ nyears,
-                data=df_years_cawat)
-summary(lmcawat)
-plot(lmcawat)
-qqnorm(residuals(lmcawat))
-abline(0,1)
-
-# check for model assumptions
-check_singularity(lmcawat)
-check_heteroscedasticity(lmcawat)  # no heterosc. detected, p = 0.232
-check_model(lmcawat)  # residuals look normal
-
 # glmm with site as random slope and intercept, poisson family with log link
-glmmcawat_full <- glmer(minsize ~ nyears + (1 + nyears | site),
-                   data=df_years_cawat, family = "poisson")
+glmmcawat_full <- glmmTMB(minsize ~ nyears + (1 + nyears | site),
+                        data=df_years_cawat, family = "poisson")
 
-# glmm with site as random effect, poisson family with log link
-glmmcawat <- glmer(minsize ~ nyears + (1|site),
-                  data=df_years_cawat, family = "poisson")
-summary(glmmcawat)
+# glmm with site as random slope, poisson family with log link
+glmmcawat <- glmmTMB(minsize ~ nyears + (1|site),
+                   data=df_years_cawat, family = "poisson")
 
 # check for model assumptions
 check_singularity(glmmcawat) # singular fit
@@ -279,52 +167,45 @@ check_heteroscedasticity(glmmcawat) # no heterosc, detected, p = 0.642
 check_overdispersion(glmmcawat) # no overdispersion detected, p=1
 check_model(glmmcawat)
 
-# glm with no random effect
-glmcawat <- glm(minsize ~ nyears,
-                   data=df_years_cawat, family = "poisson")
-summary(glmcawat)
-
-# check for model assumptions
-check_singularity(glmcawat)
-check_heteroscedasticity(glmcawat) # no heterosc, detected, p = 0.65
-check_overdispersion(glmcawat) # no overdispersion detected, p = 1
-check_model(glmcawat)
-
 # compare models
-comparecawat = compare_performance(lmcawat, lmmcawat, glmcawat, glmmcawat, rank=T)  # best fit for lmm w/ random effect
-plot(comparecawat)
+comparecawat = compare_performance(glmmcawat, glmmcawat_full, rank=T)  # best fit for glmm w/ random effect
+comparecawat  # random intercept only mixed model has lower AIC than full model
+aiccawat = AIC(glmmcawat, glmmcawat_full)
 write.csv(comparecawat,paste(respath,"modelcompare_years_cawat.csv",sep=''), row.names = F)
+# save the aic comparison to a table for Table S6
+AICtable <- rbind(AICtable, data.frame(aiccawat) %>% mutate(mod = row.names(aiccawat), crop = 'cawat', timescale = 'across'))
 
-# perform anova and save glmm results to file
-# save glm output
-fnamecoeff = paste(respath,"glm_coeff_","cawat","years",".csv",sep="")
-fnameanova = paste(respath,"glm_anova_","cawat","years",".csv",sep="")
-write.csv(summary(glmcawat)$coefficients,fnamecoeff)
-write.csv(Anova(glmcawat),fnameanova)
-
-effcawat = as.data.frame(effect(term="nyears", mod=glmcawat))
-write.csv(effcawat, paste(respath,"cawat_years_effects.csv",sep=''))
-
-# save glmm output
+# perform anova and save glmm results for lowest aic model to file
 fnamecoeff = paste(respath,"glmm_coeff_","cawat","years",".csv",sep="")
 fnameanova = paste(respath,"glmm_anova_","cawat","years",".csv",sep="")
-write.csv(summary(glmmcawat)$coefficients,fnamecoeff)
+summary(glmmcawat)
+write.csv(summary(glmmcawat)$coefficients$cond,fnamecoeff)
 write.csv(Anova(glmmcawat),fnameanova)
+r2(glmmcawat, tolerance = 1e-11)
 
-# save lmm output
-fnamecoeff = paste(respath,"lmm_coeff_","cawat","years",".csv",sep="")
-fnameanova = paste(respath,"lmm_anova_","cawat","years",".csv",sep="")
-write.csv(summary(lmmcawat)$coefficients,fnamecoeff)
-write.csv(Anova(lmmcawat),fnameanova)
+# save estimated effect sizes to file
+effcawat = as.data.frame(effect(term="nyears", mod=glmmcawat))
+write.csv(effcawat, paste(respath,"cawat_years_effects.csv",sep=''))
 
-### stats for change in min species with number of rounds ###
+# find factor increase and percent increase in species needed w/ number of years over whole time period
+pincyca = effcawat %>% summarize(finc = last(fit)/first(fit), pinc = 100*(last(fit)-first(fit))/first(fit))
+
+# add r2 and effect sizes to dataframe
+dfr2 = rbind(dfr2, 
+             data.frame(crop='cawat', timescale = 'across', model='int_only', r2m=r2(glmmcawat)[2], r2c=r2(glmmcawat)[1],
+                        slope = summary(glmmcawat)$coefficients$cond[2], slopese = summary(glmmcawat)$coefficients$cond[4], 
+                        int=summary(glmmcawat)$coefficients$cond[1], intse = summary(glmmcawat)$coefficients$cond[3],
+                        percinc = pincyca$pinc )) %>% remove_rownames()
+
+
+### stats for change in min species with number of rounds ### ---------------
 
 ## fit a linear mixed model for blueberry with number of rounds as x var and number of species in minimum set as y var
 # view histogram of blueberry data
 hist(df_rounds_blue$minsize,breaks=6)
 hist(log(df_rounds_blue$minsize),breaks=6)
 
-# glmm with site as random effect
+# glmm with site as random intercept
 glmmblueround <- glmer(minsize ~ nrounds + (1|site),
                 data=df_rounds_blue, family='poisson')
 summary(glmmblueround)
@@ -338,19 +219,6 @@ isSingular(glmmblueround)
 check_heteroscedasticity(glmmblueround) # no heterosced., p = 0.096
 check_overdispersion(glmmblueround) # no overdispersion, p = 1
 
-# glm with no random effect
-glmblueround <- glm(minsize ~ nrounds,
-                       data=df_rounds_blue, family='poisson')
-summary(glmblueround)
-
-# visualize model fit
-qqnorm(residuals(glmblueround))
-hist(residuals(glmblueround))
-check_model(glmblueround)
-check_singularity(glmblueround)
-check_heteroscedasticity(glmblueround) # no heterosced., p = 0.739
-check_overdispersion(glmblueround) # no overdispersion, p = 1
-
 # glmm with site as random slope and intercept
 glmmblueround_full <- glmer(minsize ~ nrounds + (1 + nrounds |site),
                        data=df_rounds_blue, family='poisson')
@@ -359,148 +227,108 @@ isSingular(glmmblueround_full)
 check_heteroscedasticity(glmmblueround_full)
 check_overdispersion(glmmblueround_full)
 
-# lm w/ no random effects
-lmblueround <- lm(minsize ~ nrounds, data=df_rounds_blue)
-check_model(lmblueround)
-check_heteroscedasticity(lmblueround) # heterosced detected, p=0.015
-check_homogeneity(lmblueround)
-
-# lmm w/ random intercept
-lmmblueround <- lmer(minsize ~ nrounds + (1|site),
-                      data=df_rounds_blue)
-summary(lmmblueround)
-#check model
-check_model(lmmblueround)
-check_heteroscedasticity(lmmblueround) 
-check_homogeneity(lmmblueround)
-
-# full lmm w/ random slope and intercept
-lmmblueround_full <- lmer(minsize ~ nrounds + (1 + nrounds |site),
-                     data=df_rounds_blue)
-summary(lmmblueround_full)
-
-# check model assumptions
-isSingular(lmmblueround_full)  # singular fit
-check_model(lmmblueround_full)
-check_heteroscedasticity(lmmblueround_full) 
-check_homogeneity(lmmblueround_full)
-
 # compare models
-compareblueround = compare_performance(lmblueround, lmmblueround, lmmblueround_full, 
-                                       glmblueround, glmmblueround, glmmblueround_full, rank=T) # model with random effect has better score
+aicbluernd = AIC(glmmblueround, glmmblueround_full)
+compareblueround = compare_performance(glmmblueround, glmmblueround_full, rank=T) # model with random effect has better score
 plot(compareblueround)
+compareblueround # AIC value lower for random intercept only glmm
 write.csv(compareblueround,paste(respath,"modelcompare_rounds_blue.csv",sep=''), row.names = F)
+AICtable <- rbind(AICtable, data.frame(aicbluernd) %>% mutate(mod = row.names(aicbluernd), crop = 'blue', timescale = 'within'))
 
-# do chi sqr and save output
-Anova(glmmblueround)
+# save output of lowest aic model to file
+summary(glmmblueround)
 fnamecoeff = paste(respath,"glmm_coeff_","blue","rounds",".csv",sep="")
 fnameanova = paste(respath,"glmm_anova_","blue","rounds",".csv",sep="")
 write.csv(summary(glmmblueround)$coefficients,fnamecoeff)
 write.csv(Anova(glmmblueround),fnameanova)
+r2(glmmblueround)
+dfr2rd = data.frame(crop='blue', model='int_only', r2m=r2(glmmblueround)[2], row.names=NULL)
 
 effblueround = as.data.frame(effect(term="nrounds", mod=glmmblueround))
 write.csv(effblueround, paste(respath,"blue_rounds_effects.csv",sep=''))
+
 percincblueround = (effblueround$fit[5]-effblueround$fit[1])/effblueround$fit[1]*100
 
-Anova(lmmblueround)
-fnamecoeff = paste(respath,"lmm_coeff_","blue","rounds",".csv",sep="")
-fnameanova = paste(respath,"lmm_anova_","blue","rounds",".csv",sep="")
-write.csv(summary(lmmblueround)$coefficients,fnamecoeff)
-write.csv(Anova(lmmblueround),fnameanova)
-
-Anova(lmmblueround_full)
-fnamecoeff = paste(respath,"lmmfull_coeff_","blue","rounds",".csv",sep="")
-fnameanova = paste(respath,"lmmfull_anova_","blue","rounds",".csv",sep="")
-write.csv(summary(lmmblueround_full)$coefficients,fnamecoeff)
-write.csv(Anova(lmmblueround_full),fnameanova)
+# add r2 and effect sizes for blueberry within years model to dataframe
+dfr2 = rbind(dfr2, 
+             data.frame(crop='blue', timescale = 'within', model='int_only', r2m=r2(glmmblueround)[2], r2c=r2(glmmblueround)[1],
+                        slope = summary(glmmblueround)$coefficients[2], slopese = summary(glmmblueround)$coefficients[4], 
+                        int=summary(glmmblueround)$coefficients[1], intse = summary(glmmblueround)$coefficients[3],
+                        percinc = percincblueround)) %>% remove_rownames()
 
 
 ## fit a glmm for NJ watermelon with number of rounds as x var and number of species in minimum set as y var
-# view watermelon data
+# view nj watermelon data
 hist(df_rounds_njwat$minsize)
 hist(log(df_rounds_njwat$minsize))
 
-# fit glmm with random effect of site
-glmmnjwatround <- glmer(minsize ~ nrounds + (1|site),
+# fit glmm with random intercept for effect of site
+glmmnjwatround <- glmer(minsize ~ nrounds + (1|site), 
                         data = df_rounds_njwat, family = 'poisson')
-summary(glmmnjwatround)
 
 # view model fit
 hist(residuals(glmmnjwatround))
 check_model(glmmnjwatround)
 check_singularity(glmmnjwatround)
 check_heteroscedasticity(glmmnjwatround) # no heterosced., p = 0.145
-check_overdispersion(glmmnjwatround) # overdispersion detected, p < 0.001
+check_overdispersion(glmmnjwatround) # overdispersion detected
 
-# fit glm with no random effect
-glmnjwatround <-  glm(minsize ~ nrounds,
+# fit full glmm with random slope intercept for effect of site
+glmmnjwatroundfull <- glmer(minsize ~ nrounds + (1 + nrounds |site),
                         data = df_rounds_njwat, family = 'poisson')
-summary(glmnjwatround)
-
-check_model(glmnjwatround)
-check_singularity(glmnjwatround)
-check_heteroscedasticity(glmnjwatround)
-check_overdispersion(glmnjwatround) # overdisp detected
+check_overdispersion(glmmnjwatroundfull) # overdispersion detected 
 
 # fit glmm with negative binomial to account for overdispersion
 glmmnjwatround2 <- glmer.nb(minsize ~ nrounds + (1|site),
                          data = df_rounds_njwat)
-summary(glmmnjwatround2)
 
 # view model fit
 hist(residuals(glmmnjwatround2))
 check_model(glmmnjwatround2)
 check_singularity(glmmnjwatround2)
-check_heteroscedasticity(glmmnjwatround2) # no heterosced., p = 0.410
 
 # fit glmm full model with negative binomial to account for overdispersion
 glmmnjwatround2full <- glmer.nb(minsize ~ nrounds + (1 + nrounds |site),
                             data = df_rounds_njwat)
-summary(glmmnjwatround2full)
 check_model(glmmnjwatround2full)
 isSingular(glmmnjwatround2full) # singular fit
 
-# fit lm w/o random effect
-lmnjwatround <-  lm(minsize ~ nrounds,
-                      data = df_rounds_njwat)
-summary(lmnjwatround)
-
-check_model(lmnjwatround)
-check_heteroscedasticity(lmnjwatround) # hetersced detected
-check_homogeneity(lmnjwatround) # non homogeneous variance detected
-
-# fit lmm w/ random int
-lmmnjwatround <-  lmer(minsize ~ nrounds + (1|site),
-                    data = df_rounds_njwat)
-check_model(lmmnjwatround)
-
-lmmnjwatroundfull <- lmer(minsize ~ nrounds + (1 + nrounds | site),
-                          data = df_rounds_njwat)  # singular fit
-
 # compare models
-comparenjwatround = compare_performance(glmnjwatround, glmmnjwatround, glmmnjwatround2, glmmnjwatround2full,
-                    lmnjwatround, lmmnjwatround, lmmnjwatroundfull, rank=T) # model with random effect and neg binom does best
-
+comparenjwatround = compare_performance(glmmnjwatround, glmmnjwatroundfull, glmmnjwatround2, glmmnjwatround2full,
+                    rank=T) 
+comparenjwatround 
+aicnjwatrnd = AIC(glmmnjwatround, glmmnjwatroundfull, glmmnjwatround2, glmmnjwatround2full)
+aicnjwatrnd = aicnjwatrnd[order(aicnjwatrnd$AIC),] # poisson model with random intercept only has lowest aic
 write.csv(comparenjwatround,paste(respath,"modelcompare_rounds_njwat.csv",sep=''), row.names = F)
+AICtable <- rbind(AICtable, data.frame(aicnjwatrnd) %>% mutate(mod = row.names(aicnjwatrnd), crop = 'nwjat', timescale = 'within'))
 
 # save results from negative binomial due to overdispersion
-Anova(glmmnjwatround2)
 fnamecoeff = paste(respath,"glmm_coeff_negbin_","njwat","rounds",".csv",sep="")
 fnameanova = paste(respath,"glmm_anova_negbin_","njwat","rounds",".csv",sep="")
 write.csv(summary(glmmnjwatround2)$coefficients,fnamecoeff)
 write.csv(Anova(glmmnjwatround2),fnameanova)
-
-effnjwatrounds = as.data.frame(effect(term = "nrounds", mod = glmmnjwatround2))
-write.csv(effnjwatrounds, paste(respath, "njwat_effects_rounds.csv",sep=''))
-percincnjwatround = (effnjwatrounds$fit[5]-effnjwatrounds$fit[1])/effnjwatrounds$fit[1]*100
+r2(glmmnjwatround2)
 
 
-## fit a lmm for CA watermelon with number of rounds as x var and number of species in minimum set as y var
+effnjwatrounds = as.data.frame(effect(term = "nrounds", mod = glmmnjwatround)) # predicted values from glmm w/ poisson
+effnjwatrounds2 = as.data.frame(effect(term = "nrounds", mod = glmmnjwatround2)) # predicted values from neg bin 
+write.csv(effnjwatrounds2, paste(respath, "njwat_effects_rounds.csv",sep=''))
+
+percincnjwatround = (effnjwatrounds2$fit[5]-effnjwatrounds2$fit[1])/effnjwatrounds2$fit[1]*100 # est 76% increase over all 3 rounds for nj watermelon
+
+# add r2 value and effect sizes for nj watermelon within years to dataframe
+dfr2 = rbind(dfr2, 
+             data.frame(crop='njwat', timescale = 'within', model='int_only', r2m=r2(glmmnjwatround2)[2], r2c=r2(glmmnjwatround2)[1],
+                        slope = summary(glmmnjwatround2)$coefficients[2], slopese = summary(glmmnjwatround2)$coefficients[4], 
+                        int=summary(glmmnjwatround2)$coefficients[1], intse = summary(glmmnjwatround2)$coefficients[3],
+                        percinc = percincnjwatround )) %>% remove_rownames()
+
+## fit a glmm for CA watermelon with number of rounds as x var and number of species in minimum set as y var
 # view data
 hist(df_rounds_cawat$minsize,breaks=8)
 hist(log(df_rounds_cawat$minsize),breaks=6)
 
-# site as random effect (full model)
+# site as random effect w/ random slope and intercept (full model)
 glmmcawatroundfull <- glmer(minsize ~ nrounds + (1 + nrounds | site),
                         data=df_rounds_cawat, family='poisson')  # singular fit
 summary(glmmcawatroundfull)
@@ -517,59 +345,46 @@ check_singularity(glmmcawatround)
 check_heteroscedasticity(glmmcawatround)  # hetero detected
 check_overdispersion(glmmcawatround) # no overdispersion, dispersion ratio =  0.477, Chi-Squared = 93, p-value = 1
 
-# glm w/ no random effect
-glmcawatround <- glm(minsize ~ nrounds,
-                        data=df_rounds_cawat, family='poisson')
-check_heteroscedasticity(glmcawatround) # heterosced detected
-check_overdispersion(glmcawatround) # no overdispersion
-check_model(glmcawatround)
-
-# lmm w/ random slope and intercept
-lmmcawatroundfull <- lmer(minsize ~ nrounds + (1 + nrounds | site),
-                            data=df_rounds_cawat) # singular fit
-check_model(lmmcawatroundfull)
-check_heteroscedasticity(lmmcawatroundfull)  # heterosced detected
-check_homogeneity(lmmcawatroundfull) # non-homogeneity detected
-
-# lmm w/ random intercept
-lmmcawatround <- lmer(minsize ~ nrounds + (1 | site),
-                          data=df_rounds_cawat)
-check_model(lmmcawatround)
-
-# lm w/ no random effect
-lmcawatround <- lm(minsize ~ nrounds,
-                      data=df_rounds_cawat)
-check_model(lmcawatround)
-
 # compare model fit
-comparecawatround = compare_performance(lmcawatround, lmmcawatround, lmmcawatroundfull,
-                                  glmcawatround, glmmcawatround, glmmcawatroundfull, rank=T)
+comparecawatround = compare_performance(glmmcawatround, glmmcawatroundfull, rank=T)
 plot(comparecawatround)
+comparecawatround  # model w/ only random intercept has lowest aic
+aiccawatrnd = AIC(glmmcawatround, glmmcawatroundfull)
+aiccawatrnd
 write.csv(comparecawatround,paste(respath,"modelcompare_rounds_cawat.csv",sep=''), row.names = F)
+AICtable <- rbind(AICtable, data.frame(aiccawatrnd) %>% mutate(mod = row.names(aiccawatrnd), crop = 'cawat', timescale = 'within'))
 
-# anova and save output
-Anova(glmmcawatround)
+# anova and save output of model with lowest aic
+summary(glmmcawatround)
 fnamecoeff = paste(respath,"glmm_coeff_","cawat","rounds",".csv",sep="")
 fnameanova = paste(respath,"glmm_anova_","cawat","rounds",".csv",sep="")
 write.csv(summary(glmmcawatround)$coefficients,fnamecoeff)
 write.csv(Anova(glmmcawatround),fnameanova)
+r2(glmmcawatround) # get r^2 values
+# dfr2rd = rbind(dfr2rd, data.frame(crop='cawat', model='int_only', r2m=r2(glmmcawatround)[2], row.names=NULL))
 
-# glm w/ no random effects has lowest AIC
-Anova(glmcawatround)
-fnamecoeff = paste(respath,"glm_coeff_","cawat","rounds",".csv",sep="")
-fnameanova = paste(respath,"glm_anova_","cawat","rounds",".csv",sep="")
-write.csv(summary(glmcawatround)$coefficients,fnamecoeff)
-write.csv(Anova(glmcawatround),fnameanova)
+# tab_model(glmmcawatround, file=paste(figpath,'glm_table_rnds_cawat')) # create a table of model output
 
 effcawatround = as.data.frame(effect(term="nrounds", mod=glmmcawatround))
 write.csv(effcawatround, paste(respath,"cawat_rounds_effects.csv",sep=''))
+percinccawatround = (effcawatround$fit[5]-effcawatround$fit[1])/effcawatround$fit[1]*100 # 
 
+# add r2 value and effect sizes for ca watermelon within years to dataframe
+dfr2 = rbind(dfr2, 
+             data.frame(crop='cawat', timescale = 'within', model='int_only', r2m=r2(glmmcawatround)[2], r2c=r2(glmmcawatround)[1],
+                        slope = summary(glmmcawatround)$coefficients[2], slopese = summary(glmmcawatround)$coefficients[4], 
+                        int=summary(glmmcawatround)$coefficients[1], intse = summary(glmmcawatround)$coefficients[3],
+                        percinc = percinccawatround )) %>% remove_rownames()
+
+## save the dataframe w/ effect sizes and r2 values and df with aic values
+write.csv(dfr2, paste(respath, "effects_r2_all.csv", sep=''))
+write.csv(AICtable, paste(respath, "aic_table_all.csv", sep=''))
 
 ### report number of species needed to meet threshold for single site-date --------
+df_rounds_njwat = df_rounds_njwat[,c(1:6,8:14)]
 df_rounds = rbind(df_rounds_blue, df_rounds_njwat, df_rounds_cawat)
 minset1r <- df_rounds %>% 
   filter(nrounds==1) %>%
   group_by(crop) %>% 
   summarise(spec_mean = mean(minsize), spec_sd = sd(minsize))
 write.csv(minset1r, paste(respath,'minset_1sitedate.csv',sep=''))
-

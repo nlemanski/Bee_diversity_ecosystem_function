@@ -4,14 +4,11 @@
 library(tidyverse)
 
 ## file paths and file names ##
-path <- "C:/Documents/winfree lab/SQL data/"
-figpath <- "C:/Documents/winfree lab/figures"
-rpath <- "C:/Documents/winfree lab/R data/"
-outpath <- "C:/Documents/winfree lab/BEFresults/"
-path2 <- "C:/Documents/winfree lab/Williams lab data/"
-
-# df1 = df_visits %>% group_by(site,year,round) %>% summarize(abundance = length(gen_sp))
-# df1 %>% ungroup() %>% summarize(meanabund = mean(abundance))
+path <- "C:/Documents/Bee_diversity_ecosystem_function/SQL data/"
+figpath <- "C:/Documents/Bee_diversity_ecosystem_function/figures"
+rpath <- "C:/Documents/Bee_diversity_ecosystem_function/R data/"
+outpath <- "C:/Documents/Bee_diversity_ecosystem_function/BEFresults/"
+path2 <- "C:/Documents/Bee_diversity_ecosystem_function/Williams lab data/"
 
 # load nj sql data files
 crops = c("blue", "njwat")

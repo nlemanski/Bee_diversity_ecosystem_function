@@ -1,5 +1,4 @@
 ## version of minfinder function to work with temporal analysis ##
-# edited by NJL 3.11.21
 
 # v is a vector that represents an ordering of the list elements 
 # list[v] gives a reordering of list according to permutation v

@@ -1,5 +1,4 @@
 ## plot results of minimum set analysis for BEF over time ##
-# edited NJL, 4/26/21, 12/13/21
 
 ## load packages ##
 library(tidyverse)
@@ -8,9 +7,9 @@ library(effects)
 library(cowplot)
 
 ## file paths and file names ##
-figpath <- "C:/Documents/figures/"
-rpath <- "C:/Documents/R data/"
-outpath <- "C:/Documents/BEFresults/"
+figpath <- "C:/Documents/Bee_diversity_ecosystem_function/figures/"
+rpath <- "C:/Documents/Bee_diversity_ecosystem_function/R data/"
+outpath <- "C:/Documents/Bee_diversity_ecosystem_function/BEFresults/"
 
 ## functions ##
 # a function to combine plots into a multi-panel plot
@@ -82,24 +81,6 @@ ggplot(data = df_rounds_blue, mapping = aes(x = nrounds, y = minsize, color = si
 
 figname = paste(figpath,'/minset_rounds_','blue','_',threshold*100,'.png',sep='')
 ggsave(filename=figname, device="png", width=6.5,height=5)
-
-# cranberry 
-ggplot(data = df_rounds_cran, mapping = aes(x = nrounds, y = minsize, color = site)) +
-  geom_jitter(width = 0.1, height = 0.1) +
-  geom_smooth(mapping = aes(x = nrounds, y = minsize, color = site), method = "lm", alpha = .08) +
-  labs(title = paste("Minimum Species Needed for ",threshold*100,"% of Pollination (",cropnames[2],")",sep=''),
-       x= "Number of Rounds",
-       y = "Number of Species",
-       color= "Site") +
-  coord_cartesian(xlim=c(0.7,2.2), ylim=c(0,15)) +
-  scale_x_continuous(breaks=seq(0,3,1)) +
-  scale_y_continuous(breaks=seq(0,16,2)) +
-  theme_light() +     
-  theme(plot.title = element_text(hjust = 0.5), axis.title = element_text(size=13), legend.position = "bottom") +
-  guides(col = guide_legend(nrow = 2))
-
-figname = paste('minset_rounds_','cran','_',threshold*100,'.png',sep='')
-ggsave(filename=figname, device="png", path=figpath, width=6.5,height=5)
 
 # nj watermelon
 ggplot(data = df_rounds_njwat) +
@@ -222,9 +203,6 @@ ggsave(filename=figname, device="png", path=figpath, width=6.5,height=5)
 ### view scatterplot with a single trend line based on glmm estimates ###
 ## min set vs number of rounds (within-years) with site-years as reps
 
-# blueberry glmm
-lmmblueround <- lmer(minsize ~ nrounds + (1|site),
-                     data=df_rounds_blue)
 
 glmmblueround <- glmer(minsize ~ nrounds + (1|site),
                        data=df_rounds_blue, family='poisson')
@@ -250,14 +228,11 @@ p1a <-
   guides(col = guide_legend(nrow = 2))
 
 figname = paste(figpath,'/minset_rounds_','blue','_',threshold*100,'_glmmline.png',sep='')
-# ggsave(filename=figname, device="png", width=6.5,height=5)
+ggsave(filename=figname, device="png", width=6.5,height=5)
 
 # nj watermelon glmm
 glmmnjwatround <- glmer.nb(minsize ~ nrounds + (1|site),  # neg bin was used because of overdispersion
                            data = df_rounds_njwat)
-lmmnjwatround <- lmer(minsize ~ nrounds + (1|site),  # neg bin was used because of overdispersion
-                      data = df_rounds_njwat)
-
 effnjwat = as.data.frame(effect(term="nrounds", mod=glmmnjwatround))
 
 p1b <- 
@@ -279,7 +254,7 @@ p1b <-
   guides(col = guide_legend(nrow = 3))
 
 figname = paste(figpath,'/minset_rounds_','njwat','_',threshold*100,'_glmmline.png',sep='')
-# ggsave(filename=figname, device="png", width=6.5,height=5)
+ggsave(filename=figname, device="png", width=6.5,height=5)
 
 # ca watermelon glmm
 glmmcawatround <-  glmer(minsize ~ nrounds + (1|site),
@@ -309,13 +284,13 @@ p1c <-
   guides(col = guide_legend(nrow = 4))
 
 figname = paste(figpath,'/minset_rounds_','cawat','_',threshold*100,'_',rmax,'round_glmline.png',sep='')
-# ggsave(filename=figname, device="png", width=7.5,height=5)
+ggsave(filename=figname, device="png", width=7.5,height=5)
 
 
 ### make multi-panel figure for min species across days ##
 # plot min species vs Number of Dates Across the Season
 plot_grid(p1c, plot_grid(p1b, p1a, ncol=2), ncol=1)
-figname = paste(figpath,'/','Fig1_minset_rounds_',threshold*100,'.png',sep='')
+figname = paste(figpath,'/','Fig1_minset_rounds_',threshold*100,'new.png',sep='')
 ggsave(filename=figname, device='png', width=8.5, height=6.5)
 
 ### scatterplot with a single trend line based on glmm estimates ###
@@ -332,7 +307,6 @@ p2c <-
   geom_jitter(data = df_years_blue, mapping = aes(x = nyears, y = minsize), width = 0.1, height = 0.1, size=1.3) +
   geom_line(data=effblue, aes(x=nyears, y=fit), color="black", linetype="solid") +
   geom_ribbon(data=effblue, aes(x=nyears, ymin=lower, ymax=upper), alpha= 0.3, fill="black") +
-  #labs(title = paste("Minimum Species Needed for ",threshold*100,"% of Pollination (",cropnames[1],")",sep=''),
   labs(title = "Blueberry",
        x= "Number of Years",
        y = "Number of Species") +
@@ -346,7 +320,7 @@ p2c <-
   guides(col = guide_legend(nrow = 2))
 
 figname = paste(figpath,'/minset_years_','blue','_',threshold*100,'_glmmline.png',sep='')
-# ggsave(filename=figname, device="png", width=6.5,height=5)
+ggsave(filename=figname, device="png", width=6.5,height=5)
 
 # nj watermelon glmm
 glmmfullnjwatyear <-  glmer(minsize ~ nyears + (1 + nyears | site),
@@ -359,7 +333,6 @@ p2a <-
   geom_jitter(data = df_years_njwat, mapping = aes(x = nyears, y = (minsize)), width = 0.1, height = 0.1, size=1.3) +
   geom_line(data=effnjwat, aes(x=nyears, y=fit), color="black", linetype="solid") +
   geom_ribbon(data=effnjwat, aes(x=nyears, ymin=lower, ymax=upper), alpha= 0.3, fill="black") +
-  #labs(title = paste("Minimum Species Needed for ",threshold*100,"% of Pollination (",cropnames[3],")",sep=''),
   labs(title = "Eastern watermelon",
        x= "Number of Years",
        y = "Number of Species") +
@@ -373,22 +346,21 @@ p2a <-
   guides(col = guide_legend(nrow = 3))
 
 figname = paste(figpath,'/minset_years_','njwat','_',threshold*100,'_',rmax,'round_glmmlinefull.png',sep='')
-# ggsave(filename=figname, device="png", width=6.5,height=5)
+ggsave(filename=figname, device="png", width=6.5,height=5)
 
 # ca watermelon glmm
-glmmcawatyear <-  glmer(minsize ~ nyears + (1|site),
+glmmcawatyear <-  glmmTMB(minsize ~ nyears + (1|site),
                         data=df_years_cawat, family = "poisson")
 glmcawatyear <- glm(minsize ~ nyears,
                 data=df_years_cawat, family = "poisson")
 
-effcawat = as.data.frame(effect(term="nyears", mod=glmcawatyear))
+effcawat = as.data.frame(effect(term="nyears", mod=glmmcawatyear)) # changed to mixed model w/ random intercept
 
 p2b <-
   ggplot() +
   geom_jitter(data = df_years_cawat, mapping = aes(x = nyears, y = minsize), width = 0.1, height = 0.1, size=1.3) +
   geom_line(data=effcawat, aes(x=nyears, y=fit), color="black", linetype="solid") +
   geom_ribbon(data=effcawat, aes(x=nyears, ymin=lower, ymax=upper), alpha= 0.3, fill="black") +
-  #labs(title = paste("Minimum Species Needed for ",threshold*100,"% of Pollination (",cropnames[4],")",sep=''),
   labs(title = "Western watermelon",
        x= "Number of Years",
        y = "Number of Species") +
@@ -402,12 +374,12 @@ p2b <-
   guides(col = guide_legend(nrow = 4))
 
 figname = paste(figpath,'/minset_years_','cawat','_',threshold*100,'_glmline.png',sep='')
-# ggsave(filename=figname, device="png", width=6.5,height=5)
+ggsave(filename=figname, device="png", width=6.5,height=5)
 
 ### make multi-panel figure for min species across years ##
 # plot min species vs number of years
 plot_grid(p2a, plot_grid(p2b, p2c, ncol=2), ncol=1)
-figname = paste(figpath,'/','Fig2_minset_years_',threshold*100,'.png',sep='')
+figname = paste(figpath,'/','Fig2_minset_years_',threshold*100,'new.png',sep='')
 ggsave(filename=figname, device='png', width=8.5, height=6.5)
 
 
@@ -636,12 +608,6 @@ ggsave(filename=paste(figpath,'abundvspecneed_all.png'),width=8.5, height=4)
 ## report mean number and proportion of species needed to meet function at a single site
 df_funall <- df_funall %>% mutate(propspec = minsize/rich)
 df_funall %>% group_by(crop) %>% summarize(specneed = mean(minsize), propneed = mean(propspec))
-
-## find number of dates that needed all their species and the ave function at those dates
-# # filter out dates where all species were needed
-# df_allspec <- df_funall %>% filter(minsize==rich)
-# df_allspec %>% group_by(crop) %>% summarize(num = length(fun), meanfun = mean(fun))
-# df_funall %>% group_by(crop) %>% summarize(num = length(fun), meanfun = mean(fun))
 
 ## divide dates into high and low function
 dfmeds <- df_funall %>% group_by(crop) %>% summarize(medfun = median(fun))

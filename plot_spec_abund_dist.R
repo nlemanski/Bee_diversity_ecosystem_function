@@ -6,7 +6,7 @@ library(hash)
 library(RColorBrewer)
 library(ggthemes)
 
-setwd("C:/Users/natal/OneDrive - Rutgers University/Documents/winfree lab/R code")
+setwd("C:/Documents/Bee_diversity_ecosystem_function/R code")
 
 ## load the species required function
 source(file="minfinder_function_time.R")
@@ -75,9 +75,7 @@ for (s in 1:length(sites)) {
     scale_x_continuous(breaks=seq(0,20,2)) +
     facet_wrap(~year) +
     theme_light()
-  
-  # ggsave(filename=paste(figpath,'accumulation_curves_',crop,'_',sites[s],'.png',sep=''))
-}
+  }
 
 ## choose a single site-year as illustrative example of high vs low abundance curves
 # ex 1
@@ -108,9 +106,7 @@ ggplot(data = dfex, aes(x=rank, y=cumfun, color=round)) +
   labs(x="Number of Bee Species",
        y="Total Pollination Provided",
        color="Date" ) +
-       # title=paste('Cumulative pollination provided by all species (',cropnames[[crop]],', site ',siteex,', ',yearex,')',sep='')) +
   scale_color_viridis_d(name="Date",labels = datelabs) +
-  # scale_color_colorblind(name="Date",labels = datelabs) +
   scale_x_continuous(breaks=seq(0,20,1)) +
   coord_cartesian(ylim = c(100,2350)) +
   theme_classic() +
@@ -121,11 +117,6 @@ ggplot(data = dfex, aes(x=rank, y=cumfun, color=round)) +
 ggsave(filename=paste(figpath,'fig3_accumulation_curves_',crop,'_example1.png',sep=''),width=6, height=3.6)
 
 abundrank <- dfex %>% group_by(round) %>% summarize(totvisits = sum(visits))
-
-# ex 2
-# siteex = 'san'
-# yearex = '2005'
-# crop = 'njwat'
 
 
 

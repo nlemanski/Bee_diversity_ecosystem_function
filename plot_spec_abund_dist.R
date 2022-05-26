@@ -78,7 +78,7 @@ for (s in 1:length(sites)) {
   }
 
 ## choose a single site-year as illustrative example of high vs low abundance curves
-# ex 1
+# Figure 3
 siteex = 'bri'
 yearex = '2012'
 crop = 'njwat'

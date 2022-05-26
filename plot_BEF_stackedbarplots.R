@@ -9,8 +9,8 @@ library(forcats)
 library(RColorBrewer)
 
 ## file paths ##
-figpath <- "C:/Documents/winfree lab/figures"
-rpath <- "C:/Documents/winfree lab/R data/"
+figpath <- "C:/Documents/Bee_diversity_ecosystem_function/figures"
+rpath <- "C:/Documents/Bee_diversity_ecosystem_function/R data/"
 
 ## import crop visit data as RData files ##
 crops = c("blue","njwat","cawat")

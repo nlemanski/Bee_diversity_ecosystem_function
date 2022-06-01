@@ -634,8 +634,7 @@ for (sitex in sites) {
           # continue to run the optimizer 1 generation at a time until results do not change for 30 generation          
           n = 30
           while (   min(out$bestFit()[n:(n-29)]) !=  out$bestFit()[n] ) {
-            # print(n)
-            # print(out$bestFit()[n])
+
             n = n+1
             out$evolve(1)
           }
@@ -782,7 +781,6 @@ df_sitemeansy = df_sitemeansy %>% mutate(minsizeint = round(minsize))
 # glmm analysis for minset vs number of rounds------------------------------------------------------------
 ## stats for minset vs nrounds results blueberry
 crop='blue'
-# df_blue = df_sitemeans %>% filter(crop == 'blue')
 df_blue = df_allsitesr %>% filter(crop == 'blue')
 
 hist(df_blue$minsize)
@@ -798,9 +796,6 @@ check_normality(lmmblue)
 glmmblue <- glmer(minsize ~ nrounds*run_type + (1|site) + (1|year),
                   data = df_blue, family = poisson)
 check_overdispersion(glmmblue)
-
-# # generalized linear model with neg bin family due to non-normality
-# glmmblue <- glmer.nb(minsize ~ nrounds*run_type + (1|site), data = df_blue)
 
 summary(glmmblue)
 Anova(glmmblue)
@@ -819,7 +814,6 @@ propincb = (incb$inc[2]-incb$inc[1])/incb$inc[2]*100
 
 ## stats for minset vs number of rounds results nj watermelon
 crop='njwat'
-# df_njwat = df_sitemeans %>% filter(crop == 'njwat')
 df_njwat = df_allsitesr %>% filter(crop == 'njwat')
 
 hist(df_njwat$minsize)
@@ -853,7 +847,6 @@ propincn <- (incn$inc[2]-incn$inc[1])/incn$inc[2]*100
 
 ## stats for minset vs number of rounds results california watermelon
 crop = 'cawat'
-# df_cawat = df_sitemeans %>% filter(crop == 'cawat')
 df_cawat = df_allsitesr %>% filter(crop == 'cawat')
 
 hist(df_cawat$minsize)
@@ -866,8 +859,6 @@ check_normality(lmmcawat)
 glmmcawat <- glmer(minsize ~ nrounds*run_type + (1+nrounds|site) + (1+nrounds|year),
                   data = df_cawat, family = poisson)
 check_overdispersion(glmmcawat)
-# glm with neg min due to non-normality
-# glmmcawat <- glmer.nb(minsize ~ nrounds*run_type + (1|site), data = df_cawat)
 
 summary(glmmcawat)
 Anova(glmmcawat)
@@ -918,10 +909,6 @@ lmby = lmer(minsize ~ nyears*run_type +(1|site), data = dfblueyrs)
 summary(lmby)
 check_normality(lmby)
 hist(residuals(lmby))
-
-# save lm output
-# write.csv(summary(lmby)$coefficients,file=paste(pth,'lm_years_','blue','.csv',sep=''))
-# write.csv(Anova(lmby),file=paste(pth,'anova_years_','blue','.csv',sep=''))
 
 # glm with poisson due to non-normality
 glmby = glmer(minsize ~ nyears*run_type +(1|site), data = dfblueyrs, family = poisson)
@@ -1011,22 +998,20 @@ for (crop in crops) {
 }
 
 ## make a multi-panel figure showing the observed and null model for all crops (min set vs number of days) ##
-# df_blue = df_sitemeans %>% filter(crop == 'blue')
 df_blue = df_allsitesr %>% filter(crop == 'blue')
 crop='blue'
 p1 <- 
   ggplot() +
-  # geom_jitter(data=df_blue, mapping=aes(x=nrounds, y=minsize, color=run_type), width = 0.1, height = 0.3, alpha=0.2) +
-  geom_jitter(data=filter(df_sitemeans,crop=='blue'), mapping=aes(x=nrounds, y=minsize, color=run_type), 
+  geom_jitter(data=filter(df_sitemeans,crop=='blue'), mapping=aes(x=nrounds, y=minsize, color=run_type, shape=run_type), 
               width = 0.1, height = 0.1, alpha=0.6, size=1) +
-  geom_line(data=effblue, mapping=aes(x=nrounds,y=fit,color=run_type)) +
-  geom_ribbon(data=effblue, mapping=aes(x=nrounds,color=run_type,ymin=lower,ymax=upper), alpha=0.1) +
-  labs(x="Number of dates across the season", y="Number of species needed", color="Model type", title='Blueberry') +
+  geom_line(data=effblue, mapping=aes(x=nrounds, y=fit, color=run_type, lty=run_type)) +
+  geom_ribbon(data=effblue, mapping=aes(x=nrounds, color=run_type, lty=run_type, ymin=lower,ymax=upper), alpha=0.1) +
+  labs(x="Number of dates across the season", y="Number of species needed", color="Model type", lty="Model type", shape="Model type",
+       title='Blueberry') +
   scale_y_continuous(breaks=seq(0,12,2)) +
   scale_x_continuous(breaks=seq(0,9,1)) +
-  # coord_cartesian(ylim=c(0.2,6)) +
   coord_cartesian( ylim=c(0.2,6), xlim=c(0.9, 3.1), clip='off') +
-  annotate("text", x=0.75, y=6.8, label='C', size=6) +
+  annotate("text", x=0.75, y=6.8, label='c', size=6) +
   theme_light() +
   mtext('A', side = 3, adj = 0.05, line = -1.3) +
   theme(plot.title = element_text(hjust = 0.5), axis.title = element_text(size=13), legend.position = 'none')
@@ -1036,16 +1021,17 @@ df_njwat = df_allsitesr %>% filter(crop == 'njwat')
 crop='njwat'
 p2 <- 
   ggplot() +
-  geom_jitter(data=filter(df_sitemeans,crop=='njwat'), mapping=aes(x=nrounds, y=minsize, color=run_type), 
+  geom_jitter(data=filter(df_sitemeans,crop=='njwat'), mapping=aes(x=nrounds, y=minsize, color=run_type, shape=run_type), 
               width = 0.1, height = 0.1, alpha=0.6, size=1) +
-  geom_line(data=effnjwat, mapping=aes(x=nrounds,y=fit,color=run_type)) +
-  geom_ribbon(data=effnjwat, mapping=aes(x=nrounds,color=run_type,ymin=lower,ymax=upper), alpha=0.1) +
-  labs(x="Number of dates across the season", y="Number of species needed", color="Model type", title='Eastern watermelon') +
+  geom_line(data=effnjwat, mapping=aes(x=nrounds,y=fit,color=run_type, lty=run_type)) +
+  geom_ribbon(data=effnjwat, mapping=aes(x=nrounds, color=run_type, lty=run_type, ymin=lower,ymax=upper), alpha=0.1) +
+  labs(x="Number of dates across the season", y="Number of species needed", color="Model type", lty="Model type", shape="Model type",
+       title='Eastern watermelon') +
   scale_y_continuous(breaks=seq(0,12,2)) +
   scale_x_continuous(breaks=seq(0,9,1)) +
   # coord_cartesian(ylim=c(0.2,6)) +
   coord_cartesian( ylim=c(0,6), xlim=c(0.9,3.1), clip='off' ) +
-  annotate("text", x=0.7, y=6.9, label='B', size=6) +
+  annotate("text", x=0.7, y=6.9, label='b', size=6) +
   theme_light() +
   theme(plot.title = element_text(hjust = 0.5), axis.title = element_text(size=13), legend.position = 'none')
 
@@ -1054,74 +1040,75 @@ df_cawat = df_allsitesr %>% filter(crop == 'cawat')
 crop='cawat'
 p3 <- 
   ggplot() +
-  geom_jitter(data=filter(df_sitemeans,crop=='cawat'), mapping=aes(x=nrounds, y=minsize, color=run_type), 
+  geom_jitter(data=filter(df_sitemeans,crop=='cawat'), mapping=aes(x=nrounds, y=minsize, color=run_type, shape=run_type), 
               width = 0.1, height = 0.1, alpha=0.6, size=1) +
-  geom_line(data=effcawat, mapping=aes(x=nrounds,y=fit,color=run_type)) +
-  geom_ribbon(data=effcawat, mapping=aes(x=nrounds,color=run_type,ymin=lower,ymax=upper), alpha=0.1) +
-  labs(x="Number of dates across the season", y="Number of species needed", color="Model type", title='Western watermelon') +
+  geom_line(data=effcawat, mapping=aes(x=nrounds, y=fit, color=run_type, lty=run_type)) +
+  geom_ribbon(data=effcawat, mapping=aes(x=nrounds, color=run_type, lty=run_type, ymin=lower, ymax=upper), alpha=0.1) +
+  labs(x="Number of dates across the season", y="Number of species needed", color="Model type", lty="Model type", shape="Model type",
+       title='Western watermelon') +
   scale_y_continuous(breaks=seq(0,12,2)) +
   scale_x_continuous(breaks=seq(0,9,1)) +
-  # coord_cartesian(ylim=c(0.2,8)) +
   coord_cartesian( ylim=c(0.2,8), xlim=c(0.9,9.1), clip='off' ) +
-  annotate("text", x=0.3, y=9, label='A', size=6) +
+  annotate("text", x=0.3, y=9, label='a', size=6) +
   theme_light() +
   theme(plot.title = element_text(hjust = 0.5), axis.title = element_text(size=13), legend.position = 'right')
-# figname = paste(figpath,'minset_null_rounds_cawat.png',sep='')
 # ggsave(filename=figname, width=8.5,height=6.5)
 
-
+# Figure S1 NEE manuscript
 plot_grid( p3, plot_grid(p2, p1, ncol=2), ncol=1)
-figname = paste(figpath,'minset_null_',nulltype,'_allreps_days.png',sep='')
+figname = paste(figpath,'BEF over time final/','FigS1_nullmodel_rounds.pdf',sep='')
 ggsave(filename=figname, width=8.5,height=6.5)
 
 
 ## make multipanel figure w/ all crops, showing min set vs number of years for null and observed ##
 p2a <-
   ggplot() +
-  geom_jitter(data=filter(df_sitemeansy,crop=='blue'), mapping=aes(x=nyears, y=minsize, color=run_type), width = 0.1, height = 0.1, alpha=0.6) +  
-  geom_ribbon(data=effblyrs, mapping=aes(x=nyears, color=run_type, ymin=lower, ymax=upper), alpha=0.2) +
-  geom_line(data=effblyrs, mapping=aes(x=nyears, y=fit, color=run_type)) +
+  geom_jitter(data=filter(df_sitemeansy,crop=='blue'), mapping=aes(x=nyears, y=minsize, color=run_type, shape=run_type), width = 0.1, height = 0.1, alpha=0.6) +  
+  geom_ribbon(data=effblyrs, mapping=aes(x=nyears, color=run_type, lty=run_type, ymin=lower, ymax=upper), alpha=0.2) +
+  geom_line(data=effblyrs, mapping=aes(x=nyears, y=fit, color=run_type, lty=run_type)) +
   labs(x="Number of years", y="Number of species needed", color="Model type", title=paste(croplabs['blue',],sep='')) +
   scale_y_continuous(breaks=seq(0,12,2)) +
   scale_x_continuous(breaks=seq(0,9,1)) +
-  coord_cartesian(ylim=c(0.2,8)) +
+  coord_cartesian(ylim=c(0.2,8), xlim=c(0.9,3.1), clip='off') +
   theme_light() +
-  theme(plot.title = element_text(hjust = 0.5), axis.title = element_text(size=13), legend.position = 'none')
-  
-figname = paste(p2a, figpath,'minset_null_years_blue.png',sep='')
-ggsave(filename=figname, width=8.5,height=6.5)
+  annotate("text", x=0.85, y=8.9, label='c', size=6) +
+  theme(plot.title = element_text(hjust = 0.5), 
+        axis.title = element_text(size=13),
+        legend.position = 'none')
 
 p2b <-
   ggplot() +
-  geom_jitter(data=filter(df_sitemeansy,crop=='cawat'), mapping=aes(x=nyears, y=minsize, color=run_type), width = 0.1, height = 0.1, alpha=0.6) +  
-  geom_ribbon(data=effcwyrs, mapping=aes(x=nyears, color=run_type, ymin=lower, ymax=upper), alpha=0.2) +
-  geom_line(data=effcwyrs, mapping=aes(x=nyears, y=fit, color=run_type)) +
+  geom_jitter(data=filter(df_sitemeansy,crop=='cawat'), mapping=aes(x=nyears, y=minsize, color=run_type,shape=run_type), 
+              width = 0.1, height = 0.1, alpha=0.6) +  
+  geom_ribbon(data=effcwyrs, mapping=aes(x=nyears, color=run_type, lty=run_type, ymin=lower, ymax=upper), alpha=0.2) +
+  geom_line(data=effcwyrs, mapping=aes(x=nyears, y=fit, color=run_type, lty=run_type)) +
   labs(x="Number of years", y="Number of species needed", color="Model type", title=paste(croplabs['cawat',],sep='')) +
   scale_y_continuous(breaks=seq(0,12,2)) +
   scale_x_continuous(breaks=seq(0,9,1)) +
-  coord_cartesian(ylim=c(0.2,6)) +
+  coord_cartesian(ylim=c(0.2,6), xlim=c(0.9,3.1), clip='off') +
   theme_light() +
-  theme(plot.title = element_text(hjust = 0.5), axis.title = element_text(size=13), legend.position = 'none')
+  annotate("text", x=0.85, y=6.7, label='b', size=6) +
+  theme(plot.title = element_text(hjust = 0.5), 
+        axis.title = element_text(size=13), 
+        legend.position = 'none')
 
-figname = paste(p2b,figpath,'minset_null_years_cawat.png',sep='')
-ggsave(filename=figname, width=8.5,height=6.5)
-  
 p2c <-
   ggplot() +
-  geom_jitter(data=filter(df_sitemeansy,crop=='njwat'), mapping=aes(x=nyears, y=minsize, color=run_type), width = 0.1, height = 0.01, alpha=0.6) +  
-  geom_ribbon(data=effnwyrs, mapping=aes(x=nyears, color=run_type, ymin=lower, ymax=upper), alpha=0.2) +
-  geom_line(data=effnwyrs, mapping=aes(x=nyears, y=fit, color=run_type)) +
-  labs(x="Number of years", y="Number of species needed", color="Model type", title=paste(croplabs['njwat',],sep='')) +
+  geom_jitter(data=filter(df_sitemeansy,crop=='njwat'), mapping=aes(x=nyears, y=minsize, color=run_type, shape=run_type), width = 0.1, height = 0.01, alpha=0.6) +  
+  geom_ribbon(data=effnwyrs, mapping=aes(x=nyears, color=run_type, lty=run_type, ymin=lower, ymax=upper), alpha=0.2) +
+  geom_line(data=effnwyrs, mapping=aes(x=nyears, y=fit, color=run_type, lty=run_type)) +
+  labs(x="Number of years", y="Number of species needed", color="Model type", lty="Model type", shape="Model type", title=paste(croplabs['njwat',],sep='')) +
   scale_y_continuous(breaks=seq(0,12,2)) +
   scale_x_continuous(breaks=seq(0,9,1)) +
-  coord_cartesian(ylim=c(0.2,8.5)) +
+  coord_cartesian(ylim=c(0.2,8.5), xlim=c(0.9,6.1), clip='off') +
+  annotate("text", x=0.7, y=9.5, label='a', size=6) +
   theme_light() +
-  theme(plot.title = element_text(hjust = 0.5), axis.title = element_text(size=13), legend.position = 'right')
-# figname = paste(figpath,'minset_null_years_njwat.png',sep='')
-  
-figname = paste(p2cfigpath,'minset_null_years_njwat1r.png',sep='')
-ggsave(filename=figname, width=8.5,height=6.5)
-  
+  theme(plot.title = element_text(hjust = 0.5), 
+        axis.title = element_text(size=13),
+        legend.position = 'right')
+
+
+# Figure S2 NEE manuscript
 plot_grid(p2c, plot_grid(p2b, p2a, ncol=2), ncol=1)
-figname = paste(figpath,'minset_null_all_years.png',sep='')
-ggsave(filename=figname, width=8.5,height=6.5)
+figname = paste(figpath,'BEF over time final/','FigS2_nullmodel_years.pdf',sep='')
+ggsave(filename=figname, width=8.5, height=6.5)

@@ -1,4 +1,6 @@
-## process crop visitation data for analysis ##
+## clean-up bee specimen data for the minimum set analysis ##
+# each row represents all individuals of a bee species that were collected off flowers in the crop transect at a single site-date
+# column "visits" is the number of individuals of that bee species that were collected at that site-date
 
 ## load packages ##
 library(tidyverse)

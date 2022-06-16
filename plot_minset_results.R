@@ -11,44 +11,6 @@ figpath <- "C:/Documents/Bee_diversity_ecosystem_function/figures/"
 rpath <- "C:/Documents/Bee_diversity_ecosystem_function/R data/"
 outpath <- "C:/Documents/Bee_diversity_ecosystem_function/BEFresults/"
 
-## functions ##
-# a function to combine plots into a multi-panel plot
-multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
-  library(grid)
-  
-  # Make a list from the ... arguments and plotlist
-  plots <- c(list(...), plotlist)
-  
-  numPlots = length(plots)
-  
-  # If layout is NULL, then use 'cols' to determine layout
-  if (is.null(layout)) {
-    # Make the panel
-    # ncol: Number of columns of plots
-    # nrow: Number of rows needed, calculated from # of cols
-    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
-                     ncol = cols, nrow = ceiling(numPlots/cols))
-  }
-  
-  if (numPlots==1) {
-    print(plots[[1]])
-    
-  } else {
-    # Set up the page
-    grid.newpage()
-    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
-    
-    # Make each plot, in the correct location
-    for (i in 1:numPlots) {
-      # Get the i,j matrix positions of the regions that contain this subplot
-      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
-      
-      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
-                                      layout.pos.col = matchidx$col))
-    }
-  }
-}
-
 ## load results files ##
 crops = c("blue","njwat","cawat")
 cropnames = c("blue"="Blueberry","njwat"="Eastern Watermelon","cawat"="Western Watermelon")
@@ -120,89 +82,9 @@ ggplot(data = df_rounds_cawat, mapping = aes(x = nrounds, y = minsize, color = s
 figname = paste('minset_rounds_','cawat','_',threshold*100,'.png',sep='')
 ggsave(filename=figname, device="png", path=figpath, width=7.5,height=5)
 
-
-## view as scatterplot: size of minimum set vs number of years ##
-# blueberry 
-ggplot(data = df_years_blue, mapping = aes(x = nyears, y = minsize, color = site)) +
-  geom_jitter(width = 0.1, height = 0.1) +
-  geom_smooth(mapping = aes(x = nyears, y = minsize, color = site), method = "lm", alpha = .08) +
-  labs(title = paste("Minimum Species Needed for ",threshold*100,"% of Pollination (",cropnames[1],")",sep=''),
-       x= "Number of Years",
-       y = "Number of Species",
-       color= "Site") +
-  coord_cartesian( ylim=c(0,13)) +
-  scale_x_continuous(breaks=seq(0,3,1)) +
-  scale_y_continuous(breaks=seq(0,14,2)) +
-  theme_light() +     
-  theme(plot.title = element_text(hjust = 0.5), axis.title = element_text(size=13), legend.position = "bottom") +
-  guides(col = guide_legend(nrow = 2))
-
-figname = paste(figpath,'/minset_years_','blue','_',threshold*100,'.png',sep='')
-ggsave(filename=figname, device="png", width=6.5,height=5)
-
-# cranberry 
-ggplot(data = df_years_cran, mapping = aes(x = nyears, y = minsize, color = site)) +
-  geom_jitter(width = 0.1, height = 0.1) +
-  geom_smooth(mapping = aes(x = nyears, y = minsize, color = site), method = "lm", alpha = .08) +
-  labs(title = paste("Minimum Species Needed for ",threshold*100,"% of Pollination (",cropnames[2],")",sep=''),
-       x= "Number of Years",
-       y = "Number of Species",
-       color= "Site") +
-  coord_cartesian(xlim=c(0.7,2.2), ylim=c(0,15)) +
-  scale_x_continuous(breaks=seq(0,3,1)) +
-  scale_y_continuous(breaks=seq(0,16,2)) +
-  theme_light() +     
-  theme(plot.title = element_text(hjust = 0.5), axis.title = element_text(size=13), legend.position = "bottom") +
-  guides(col = guide_legend(nrow = 2))
-
-figname = paste('minset_years_','cran','_',threshold*100,'.png',sep='')
-ggsave(filename=figname, device="png", path=figpath, width=8,height=5)
-
-# nj watermelon
-ggplot(data = df_years_njwat) +
-  geom_jitter(mapping = aes(x = nyears, y = minsize, color = site), width = 0.1, height = 0.1) +
-  geom_smooth(mapping = aes(x = nyears, y = minsize, color = site), method = "lm", alpha = .08) +
-  labs(title = paste("Minimum Species Needed for ",threshold*100,"% of Pollination (",cropnames[3],")",sep=''),
-       x= "Number of Years",
-       y = "Number of Species",
-       color= "Site") +
-  coord_cartesian(ylim=c(0,20)) +
-  scale_x_continuous(breaks=seq(0,6,1)) +
-  scale_y_continuous(breaks=seq(0,20,4)) +
-  theme_light() +     
-  theme(plot.title = element_text(hjust = 0.5), axis.title = element_text(size=13), legend.position = "bottom") +
-  guides(col = guide_legend(nrow = 3))
-
-figname = paste('minset_years_','njwat','_',threshold*100,'_',rmax,'round.png',sep='')
-#figname = paste('minset_years_','njwat','_',threshold*100,'_nolegend.png',sep='')
-ggsave(filename=figname, device="png", path=figpath, width=6.5,height=5)
-
-# CA watermelon
-ggplot(data = df_years_cawat, mapping = aes(x = nyears, y = minsize, color = site)) +
-  geom_jitter(width = 0.1, height = 0.1) +
-  geom_smooth(mapping = aes(x = nyears, y = minsize, color = site), method = "lm", alpha = .08) +
-  labs(title = paste("Minimum Species Needed for ",threshold*100,"% of Pollination (",cropnames[4],")",sep=''),
-       x= "Number of Years",
-       y = "Number of Species",
-       color= "Site") +
-  coord_cartesian(ylim=c(0,10)) +
-  scale_x_continuous(breaks=seq(0,9,1)) +
-  scale_y_continuous(breaks=seq(0,10,2)) +
-  theme_light() +     
-  theme(plot.title = element_text(hjust = 0.5), axis.title = element_text(size=13), legend.text=element_text(size=6), 
-        legend.position = "bottom") +
-  guides(col = guide_legend(nrow = 4))
-
-figname = paste('minset_years_','cawat','_',threshold*100,'.png',sep='')
-ggsave(filename=figname, device="png", path=figpath, width=6.5,height=5)
-
-
-
 # manuscript figures 1 and 2 ----------------------------------------------
-
 ### view scatterplot with a single trend line based on glmm estimates ###
 ## min set vs number of rounds (within-years) with site-years as reps
-
 
 glmmblueround <- glmer(minsize ~ nrounds + (1|site),
                        data=df_rounds_blue, family='poisson')
@@ -213,8 +95,6 @@ p1a <-
   geom_jitter(data = df_rounds_blue, mapping = aes(x = nrounds, y = minsize), width = 0.1, height = 0.1, size=1.3) +
   geom_line(data=effblue, aes(x=nrounds, y=fit), color="black", linetype="solid") +
   geom_ribbon(data=effblue, aes(x=nrounds, ymin=lower, ymax=upper), alpha= 0.3, fill="black") +
-  # geom_abline(slope=slb, intercept=intb) +
-  #labs(title = paste("Minimum Species Needed for ",threshold*100,"% of Pollination (",cropnames[1],")",sep=''),
   labs(title = "Blueberry",
        x= "Number of Dates Across the Season",
        y = "Number of Species") +
@@ -240,7 +120,6 @@ p1b <-
   geom_jitter(data = df_rounds_njwat, mapping = aes(x = nrounds, y = (minsize)), width = 0.1, height = 0.1, size=1.3) +
   geom_line(data=effnjwat, aes(x=nrounds, y=fit), color="black", linetype="solid") +
   geom_ribbon(data=effnjwat, aes(x=nrounds, ymin=lower, ymax=upper), alpha= 0.3, fill="black") +
-  #labs(title = paste("Minimum Species Needed for ",threshold*100,"% of Pollination (",cropnames[3],")",sep=''),
   labs(title = "Eastern watermelon",
        x= "Number of Dates Across the Season",
        y = "Number of Species") +
@@ -270,7 +149,6 @@ p1c <-
   geom_jitter(data = df_rounds_cawat, mapping = aes(x = nrounds, y = minsize), width = 0.1, height = 0.1, size=1.3) +
   geom_line(data=effcawat, aes(x=nrounds, y=fit), color="black", linetype="solid") +
   geom_ribbon(data=effcawat, aes(x=nrounds, ymin=lower, ymax=upper), alpha= 0.3, fill="black") +
- # labs(title = paste("Minimum Species Needed for ",threshold*100,"% of Pollination (",cropnames[4],")",sep=''),
   labs(title = "Western watermelon",
        x= "Number of Dates Across the Season",
        y = "Number of Species") +
@@ -600,7 +478,6 @@ ggplot(data=df_funall, aes(x=visits, y=(minsize/rich*100))) +
        y="Percent of species needed to meet threshold",
        title=paste("Effect of bee abundance on proportion of species needed to meet threshold",sep='')) +
   coord_cartesian(ylim=c(0,100)) +
-  # scale_y_log10(breaks=seq(0,100,20)) +
   theme_light() +
   theme(plot.title = element_text(hjust = 0.5))
 ggsave(filename=paste(figpath,'abundvspecneed_all.png'),width=8.5, height=4)
@@ -614,9 +491,11 @@ dfmeds <- df_funall %>% group_by(crop) %>% summarize(medfun = median(fun))
 df_funall <- left_join(df_funall,dfmeds)
 df_funall <- df_funall %>% mutate(abundance = if_else(fun>medfun,'high','low'))
 # divide dates into needing all species or not
-df_funall <- df_funall %>% mutate(allspec = if_else(minsize==rich,'Yes','No'))
+# column 'all' is the number of sites needing all their species to meet the function threshold
+# column 'notall' is number of sites not needing all their species to meet the function threshold
+df_funall <- df_funall %>% mutate(allspec = if_else(minsize==rich,'all','notall'))
 
-# find how many high vs low sites needed all species
+# find how many high vs low function sites needed all their species to meet the function threshold, save as Supplementary Table S8
 allspectable <- df_funall %>% 
   group_by(crop,abundance,allspec) %>% 
   summarize(num = length(fun)) %>% 
@@ -625,12 +504,13 @@ allspectable[is.na(allspectable)] <- 0
 allspectable <- allspectable %>% mutate(propall = 100*all /(all+notall))
 allspectable <- select(allspectable, crop, abundance, propall) %>% 
   pivot_wider(names_from=abundance, values_from=propall)
-write.table(allspectable,paste(outpath,'allspectable.csv',sep=''),sep=',',row.names=F)
+write.table(allspectable,paste(outpath,'TableS8.csv',sep=''),sep=',',row.names=F)
 
 df_allspec <- df_funall %>% 
   group_by(crop,abundance,allspec) %>% 
   summarize(num = length(fun))
 
+# plot number of high vs. low function sites needing all their species to meet the function threshold
 ggplot(data=df_allspec) +
   geom_bar(stat='identity',aes(x=abundance, y=num,fill=allspec)) +
   facet_wrap(~crop, labeller = labeller(crop = cropnames)) +

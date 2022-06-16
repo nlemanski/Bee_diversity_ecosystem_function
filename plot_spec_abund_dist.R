@@ -6,16 +6,16 @@ library(hash)
 library(RColorBrewer)
 library(ggthemes)
 
-setwd("C:/Documents/Bee_diversity_ecosystem_function/R code")
+setwd("C:/Documents/Bee_diversity_ecosystem_function/R code") # change to path where minfinder_function_time.R is located
 
 ## load the species required function
 source(file="minfinder_function_time.R")
 
 ## file paths and file names ##
-path <- "C:/Users/natal/OneDrive - Rutgers University/Documents/winfree lab/SQL data/"
-figpath <- "C:/Users/natal/OneDrive - Rutgers University/Documents/winfree lab/figures/"
-rpath <- "C:/Users/natal/OneDrive - Rutgers University/Documents/winfree lab/R data/"
-outpath <- "C:/Users/natal/OneDrive - Rutgers University/Documents/winfree lab/BEFresults/"
+path <- "C:/Documents/Bee_diversity_ecosystem_function/SQL data/" # change to filepath where data is located
+figpath <- "C:/Documents/Bee_diversity_ecosystem_function/figures/" # change to filepath where figures should be saved
+rpath <- "C:/Documents/Bee_diversity_ecosystem_function/R data/" # change to filepath where data is located
+outpath <- "C:/Documents/Bee_diversity_ecosystem_function/BEFresults/" # change to filepath where results should be saved
 
 ## color palette for plots ##
 cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
@@ -114,9 +114,9 @@ ggplot(data = dfex, aes(x=rank, y=cumfun, color=round)) +
         legend.text = element_text(size=10),
         legend.background = element_rect(fill="transparent"))
   
-ggsave(filename=paste(figpath,'fig3_accumulation_curves_',crop,'_example1.png',sep=''),width=6, height=3.6)
+ggsave(filename=paste(figpath,'Fig3_accumulation_curves_',crop,'_example1.png',sep=''),width=6, height=3.6) # save as image
+ggsave(filename=paste(figpath,'Fig3_accumulation_curves_',crop,'_example1.pdf',sep=''),width=6, height=3.6) # save as pdf
 
-abundrank <- dfex %>% group_by(round) %>% summarize(totvisits = sum(visits))
 
 
 

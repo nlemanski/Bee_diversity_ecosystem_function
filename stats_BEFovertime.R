@@ -40,8 +40,6 @@ df_years_njwat_3r = df_years_njwat
 ## visualize blueberry data to see if linear model will fit ##
 hist(df_years_blue$minsize)  # data is right tailed
 hist(log(df_years_blue$minsize))
-bluenorm = fitdistr(df_years_blue$minsize, densfun="normal")
-curve(dnorm(x, bluenorm$estimate[1], bluenorm$estimate[2]), col="red", lwd=2, add=T)
 
 # fit glmer with poisson family, random intercept for site
 glmmblue = glmer(minsize ~ nyears + (1|site), 

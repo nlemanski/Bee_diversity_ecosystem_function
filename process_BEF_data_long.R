@@ -61,11 +61,11 @@ save(df_obs_njwat,file=paste(rpath,'obs_njwat.Rdata',sep=''))
 
 ### clean up CA data and convert to rdata for null model analysis ###
 crop = "cawat"
-df_obs_cawat = read.csv(paste(path2,"3yrs_wbees_trimmed.csv",sep=''))
+df_obs_cawat = read.csv(paste(path2,"3yrs_wbees_oncrop.csv",sep=''))
 summary(df_obs_cawat)
 
-# select watermelon only
-df_obs_cawat = filter(df_obs_cawat, flower_sps == 'Citrullus_lanatus')
+# select watermelon on the crop transect only
+df_obs_cawat = filter(df_obs_cawat, flower_sps == 'Citrullus_lanatus', ON_OFF=='ON')
 
 ## combine equivalent watermelon sites, rename rounds
 # sites  that are actually the second three rounds get relabeled round 4-6

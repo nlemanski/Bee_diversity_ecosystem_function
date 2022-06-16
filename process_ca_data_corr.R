@@ -1,31 +1,12 @@
 # import the western watermelon data set and clean data for use in the analysis
 # each row is a bee specimen collected off a watermelon flower in the crop transect
-# fixing the cleanup so it filters only the crop transect, not hectare observations
 
 ## import packages ##
 library(tidyverse)
 
 ## import CA bee visit data ##
-path = "C:/Users/natal/OneDrive - Rutgers University/Documents/winfree lab/Williams lab data/"
+path = "Bee_diversity_ecosystem_function/" # change to filepath where the raw data is located
 
-# fname = paste(path,'3yrs_wbees_trimmed.csv',sep='')
-# df_ca = read.csv(fname,header=T, stringsAsFactors=F)
-# # list(df_ca.columns.values)
-# # drop unnecessary columns
-# df_ca = select(df_ca, 1:24)
-# 
-# head(df_ca)
-# 
-# ## select only watermelon data ##
-# df_ca_wat1 = df_ca %>% filter(flower_sps=='Citrullus_lanatus')
-# # select only on-crop transect data
-# df_ca_wat = df_ca_wat1 %>% filter(ON_OFF=='ON')
-# head(as_tibble(df_ca_wat))
-# #df_ca_wat.columns.values
-# 
-# # write a new csv of just the observations used in our analysis
-# fname1 = paste(path,'3yrs_wbees_oncrop.csv',sep='')
-# write.csv(df_ca_wat, file = fname1, row.names = F)
 
 # import California watermelon bee observations and process for analysis
 fname1 = paste(path,'3yrs_wbees_oncrop.csv',sep='')
@@ -50,12 +31,11 @@ df_ca_wat$sex <- df_ca_wat$sex %>%
 
 ## combine equivalent watermelon sites, rename rounds ##
 siteswat = sort(unique(df_ca_wat$site))
-#sitedays = df_ca_wat.groupby(['site','year','round'])['date'].unique().reset_index() # see what days each sites were sampled on
 sitedays = df_ca_wat %>% group_by(site,year,round) %>%
   summarize(date = unique(date))
 
 # assign new round numbers 1-6 for the sites sampled multiple seasons per year
-# sites  that are actually the second three rounds get relabeled round 4-6
+# sites that are actually the second three rounds get relabeled round 4-6
 df_ca_wat = df_ca_wat %>% 
   mutate(round_original = round, site_original = site) # to record original round and site names
 
@@ -88,35 +68,20 @@ df_ca_wat = df_ca_wat %>%
                                                                  site))))))))
 
 
-# ste = df_ca_wat['site_ed']  # move round_ed column next to round column
-# df_ca_wat.drop(labels=['site_ed'], axis=1, inplace = True)
-# df_ca_wat.insert(5, 'site_ed', ste)
-
-# rename new and old site and round columns
-# df_ca_wat.rename(columns={'site':'site_original', 'round':'round_original'},inplace=True)
-# df_ca_wat.rename(columns={'site_ed':'site', 'round_ed':'round'},inplace=True)
-
 ## find number of visits of each bee species for each site-date in watermelon
 df_cawatvis = df_ca_wat %>% 
   group_by(year,site,round,bee_genus,bee_sps,sex) %>%
   summarise(visits = length(bee_sps))
 
-# df_ca_wat['visits'] = 1
-# df_cawatvis = pd.DataFrame(df_ca_wat.groupby(['year','site','round','bee_genus','bee_sps','sex'])['visits'].sum()).reset_index()
-
 ## import single-visit function data ##
 fname1 = paste(path,"CAL2001Melon_vis_depFINAL_meandep.csv",sep='')
 df_function = read.csv(fname1)
 df_function = df_function %>% select(1:5)
-df_function = df_function %>% rename(fungroup=ï..Species)
+df_function = df_function %>% rename(fungroup=Ã¯..Species)
 fungroups = unique(df_function$fungroup)
-# df_function.drop(columns=['Unnamed: 5','Unnamed: 6','Unnamed: 7','Unnamed: 8','Unnamed: 9','Unnamed: 10'],inplace=True)
-# df_function.rename(columns={'Species' : 'fungroup'},inplace=True)
-# fungroups = list(df_function['fungroup'].unique())
 
 # fill in female function values for groups where male value missing
 hyl = filter(df_function, fungroup == 'Hylaeus', Sex == 'F')$SIGmean
-# hyl = df_function[df_function['fungroup'] == 'Hylaeus'][df_function['Sex'] == 'F']['SIGmean']
 df_function$SIGmean = ifelse(df_function$fungroup == 'Hylaeus', hyl, df_function$SIGmean)
 las = filter(df_function, fungroup == 'Lasioglossum', Sex == 'F')$SIGmean
 df_function$SIGmean = ifelse(df_function$fungroup == 'Lasioglossum', las, df_function$SIGmean)
@@ -155,9 +120,6 @@ funmale = filter(df_function,Sex=='M')
 dffemale = left_join(dffemale,funfemale, by="fungroup")
 dfmale = left_join(dfmale,funmale, by="fungroup")
 dfnan = left_join(dfnan,funfemale, by="fungroup")
-# dffemale = dffemale.join(funfemale.set_index('fungroup'),on='fungroup',how='left')
-# dfmale = dfmale.join(funmale.set_index('fungroup'),on='fungroup',how='left')
-# dfnan = dfnan.join(funfemale.set_index('fungroup'),on='fungroup',how='left')
 
 # rejoin into one dataframe
 df_cawatvis = rbind(dffemale,dfmale,dfnan)
@@ -174,15 +136,10 @@ df_cawatvis$SIGmean = ifelse(df_cawatvis$fungroup == 'Bombus other', meanfunbomb
 
 # drop rows with no species IDs
 df_cawatvis = df_cawatvis %>% filter(!is.na(bee_sps))
-# find list of species with no fungroup
-# unclassified_species = df_cawatvis.groupby('fungroup').get_group('other')['bee_sps'].unique().tolist()
-# np.savetxt(path+'unclassified_species.csv',unclassified_species,delimiter=", ",fmt ='% s')
 
 # save watermelon visit data to file
-# fname = paste(path,'ca_wat_visits.csv',sep='')
-fname = paste(path,'ca_wat_visits_corr.csv',sep='')
+fname = paste(path,'ca_wat_visits.csv',sep='')
 write.csv(df_cawatvis, file=fname, row.names=F)
 
-# old = read.csv(paste(path,'ca_wat_visits.csv',sep=''))
-corr = read.csv(paste(path,'ca_wat_visits_corr.csv',sep=''))
+ca_wat_visits = read.csv(paste(path,'ca_wat_visits.csv',sep=''))
 
